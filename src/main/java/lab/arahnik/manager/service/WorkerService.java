@@ -46,6 +46,7 @@ public class WorkerService {
                     .id(worker.getId())
                     .name(worker.getName())
                     .status(worker.getStatus())
+                    .ownerId(worker.getOwner().getId())
                     .build());
         }
         return res;
@@ -63,7 +64,7 @@ public class WorkerService {
 
     public Worker update(Worker entity) throws Exception {
         String username = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (!userRepository.findByUsername(username).isPresent()) throw new Exception("Server error");
+        if (userRepository.findByUsername(username).isEmpty()) throw new Exception("Server error");
         User user = userRepository.findByUsername(username).get();
         if (!user.getId().equals(entity.getOwner().getId())) {
             throw new Exception("No privileges");

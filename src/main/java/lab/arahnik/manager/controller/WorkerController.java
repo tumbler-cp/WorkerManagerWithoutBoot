@@ -23,8 +23,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class WorkerController {
     private final WorkerService workerService;
-    private final UserRepository userRepository;
     private final TextSocketHandler textSocketHandler;
+    private final UserRepository userRepository;
 
     @GetMapping("/all")
     public List<WorkerDto> getAllWorkers() {
@@ -45,12 +45,9 @@ public class WorkerController {
 
     @PostMapping("/new")
     public WorkerDto createWorker(@RequestBody WorkerRequestDto dto) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user;
-        if (userRepository.findByUsername(username).isPresent()) {
-            user = userRepository.findByUsername(username).get();
-        } else throw new UsernameNotFoundException("Username not found");
-
+        User user = userRepository.findByUsername(
+                SecurityContextHolder.getContext().getAuthentication().getName()
+        ).orElseThrow(() -> new UsernameNotFoundException("Server error"));
         textSocketHandler.sendMessage(
                 Event
                         .builder()
