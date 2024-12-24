@@ -7,7 +7,7 @@ import lab.arahnik.manager.dto.response.OrganizationDto;
 import lab.arahnik.manager.entity.Address;
 import lab.arahnik.manager.entity.Event;
 import lab.arahnik.manager.entity.Organization;
-import lab.arahnik.manager.enums.EventType;
+import lab.arahnik.manager.enums.ChangeType;
 import lab.arahnik.manager.repository.AddressRepository;
 import lab.arahnik.manager.repository.OrganizationRepository;
 import lab.arahnik.websocket.handler.TextSocketHandler;
@@ -64,7 +64,7 @@ public class OrganizationService {
         textSocketHandler.sendMessage(
                 Event.builder()
                         .object(Organization.class.getSimpleName())
-                        .type(EventType.CREATION)
+                        .type(ChangeType.CREATION)
                         .build().toString());
         return OrganizationDto.builder()
                 .id(res.getId())
@@ -99,7 +99,7 @@ public class OrganizationService {
         textSocketHandler.sendMessage(
                 Event.builder()
                         .object(Organization.class.getSimpleName())
-                        .type(EventType.UPDATE)
+                        .type(ChangeType.UPDATE)
                         .build().toString()
         );
         return OrganizationDto.builder()
@@ -125,7 +125,7 @@ public class OrganizationService {
         textSocketHandler.sendMessage(
                 Event.builder()
                         .object(Organization.class.getSimpleName())
-                        .type(EventType.DELETION)
+                        .type(ChangeType.DELETION)
                         .build().toString()
         );
     }

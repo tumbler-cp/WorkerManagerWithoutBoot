@@ -27,7 +27,7 @@ public class LocationController {
         return locationService.allLocations();
     }
 
-    @GetMapping
+    @GetMapping("/find")
     public LocationDto getLocationById(@RequestParam(name = "id") Long id) {
         return locationService.getLocationById(id);
     }
@@ -43,6 +43,7 @@ public class LocationController {
                         .y(newLocation.getY())
                         .name(newLocation.getName())
                         .owner(user)
+                        .editableByAdmin(newLocation.getEditableByAdmin())
                         .build()
         );
     }

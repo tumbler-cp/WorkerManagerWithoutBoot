@@ -64,6 +64,7 @@ public class WorkerController {
                         .status(newWorker.getStatus())
                         .person(person)
                         .owner(user)
+                        .editableByAdmin(newWorker.getEditableByAdmin())
                         .build()
         );
     }

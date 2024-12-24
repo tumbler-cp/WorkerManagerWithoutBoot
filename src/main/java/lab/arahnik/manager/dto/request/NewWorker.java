@@ -22,4 +22,5 @@ public class NewWorker {
     private Position position;
     private Status status;
     private Long personId;
+    private Boolean editableByAdmin;
 }

@@ -2,9 +2,9 @@ services:
   db:
     image: postgres
     environment:
-      POSTGRES_DB: workers
-      POSTGRES_USER: arahnik
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: studs
+      POSTGRES_USER: s368994
+      POSTGRES_PASSWORD: 511xXyUCKOAkcbJM
     ports:
       - "5555:5432"
     volumes:

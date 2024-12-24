@@ -7,4 +7,5 @@ public class NewLocation {
     private Double x;
     private Long y;
     private String name;
+    private Boolean editableByAdmin;
 }

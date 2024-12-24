@@ -30,7 +30,7 @@ public class PersonController {
         return personService.allPersons();
     }
 
-    @GetMapping
+    @GetMapping("/find")
     public PersonDto getPersonById(@RequestParam("id") Long id) {
         return personService.getPersonById(id);
     }
@@ -51,6 +51,7 @@ public class PersonController {
                         .weight(newPerson.getWeight())
                         .passportID(newPerson.getPassportID())
                         .owner(user)
+                        .editableByAdmin(newPerson.getEditableByAdmin())
                         .build()
         );
     }

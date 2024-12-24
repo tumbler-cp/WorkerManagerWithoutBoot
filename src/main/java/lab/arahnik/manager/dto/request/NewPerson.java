@@ -17,4 +17,5 @@ public class NewPerson {
     private Double height;
     private Long weight;
     private String passportID;
+    private Boolean editableByAdmin;
 }

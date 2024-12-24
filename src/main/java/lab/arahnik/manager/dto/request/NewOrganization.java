@@ -15,4 +15,5 @@ public class NewOrganization {
     private Long employeesCount;
     private String fullName;
     private Float rating;
+    private Boolean editableByAdmin;
 }

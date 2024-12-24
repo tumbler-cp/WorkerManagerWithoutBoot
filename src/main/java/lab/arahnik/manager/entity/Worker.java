@@ -12,7 +12,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDate;
 
@@ -32,7 +31,6 @@ public class Worker {
     @JoinColumn(name = "coordinates_id")
     private Coordinates coordinates;
     @NotNull
-    @CreatedDate
     private LocalDate creationDate;
     @ManyToOne
     @JoinColumn(name = "organization_id")
@@ -49,10 +47,17 @@ public class Worker {
     private Status status;
     @NotNull
     @OneToOne
-    @JoinColumn(name = "person_id")
+    @JoinColumn(name = "person_id", unique = true)
     private Person person;
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "owner_id")
     private User owner;
+    @NotNull
+    private Boolean editableByAdmin;
+
+    @PrePersist
+    protected void onCreate() {
+        this.creationDate = LocalDate.now();
+    }
 }

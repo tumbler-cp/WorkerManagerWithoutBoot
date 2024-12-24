@@ -1,12 +1,13 @@
 package lab.arahnik.manager.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import lab.arahnik.administration.service.LogService;
 import lab.arahnik.authentication.service.UserService;
 import lab.arahnik.exception.InsufficientEditingRightsException;
 import lab.arahnik.manager.dto.response.WorkerDto;
 import lab.arahnik.manager.entity.Event;
 import lab.arahnik.manager.entity.Worker;
-import lab.arahnik.manager.enums.EventType;
+import lab.arahnik.manager.enums.ChangeType;
 import lab.arahnik.manager.repository.CoordinatesRepository;
 import lab.arahnik.manager.repository.OrganizationRepository;
 import lab.arahnik.manager.repository.PersonRepository;
@@ -26,14 +27,16 @@ public class WorkerService {
     private final CoordinatesRepository coordinatesRepository;
     private final OrganizationRepository organizationRepository;
     private final PersonRepository personRepository;
+    private final LogService logService;
 
-    public WorkerService(WorkerRepository workerRepository, TextSocketHandler textSocketHandler, UserService userService, CoordinatesRepository coordinatesRepository, OrganizationRepository organizationRepository, PersonRepository personRepository) {
+    public WorkerService(WorkerRepository workerRepository, TextSocketHandler textSocketHandler, UserService userService, CoordinatesRepository coordinatesRepository, OrganizationRepository organizationRepository, PersonRepository personRepository, LogService logService) {
         this.workerRepository = workerRepository;
         this.textSocketHandler = textSocketHandler;
         this.userService = userService;
         this.coordinatesRepository = coordinatesRepository;
         this.organizationRepository = organizationRepository;
         this.personRepository = personRepository;
+        this.logService = logService;
     }
 
     public List<WorkerDto> allWorkers() {
@@ -82,9 +85,10 @@ public class WorkerService {
         textSocketHandler.sendMessage(
                 Event.builder()
                         .object(Worker.class.getSimpleName())
-                        .type(EventType.CREATION)
+                        .type(ChangeType.CREATION)
                         .build().toString()
         );
+        logService.addLog(ChangeType.CREATION, worker);
         return WorkerDto.builder()
                 .id(worker.getId())
                 .name(worker.getName())
@@ -132,9 +136,10 @@ public class WorkerService {
         textSocketHandler.sendMessage(
                 Event.builder()
                         .object(Worker.class.getSimpleName())
-                        .type(EventType.UPDATE)
+                        .type(ChangeType.UPDATE)
                         .build().toString()
         );
+        logService.addLog(ChangeType.UPDATE, worker);
         return WorkerDto.builder()
                 .id(res.getId())
                 .name(res.getName())
@@ -162,7 +167,7 @@ public class WorkerService {
         textSocketHandler.sendMessage(
                 Event.builder()
                         .object(Worker.class.getSimpleName())
-                        .type(EventType.DELETION)
+                        .type(ChangeType.DELETION)
                         .build().toString()
         );
     }

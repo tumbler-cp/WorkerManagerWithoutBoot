@@ -6,8 +6,7 @@ import lab.arahnik.exception.InsufficientEditingRightsException;
 import lab.arahnik.manager.dto.response.LocationDto;
 import lab.arahnik.manager.entity.Event;
 import lab.arahnik.manager.entity.Location;
-import lab.arahnik.manager.entity.Person;
-import lab.arahnik.manager.enums.EventType;
+import lab.arahnik.manager.enums.ChangeType;
 import lab.arahnik.manager.repository.LocationRepository;
 import lab.arahnik.websocket.handler.TextSocketHandler;
 import lombok.RequiredArgsConstructor;
@@ -57,7 +56,7 @@ public class LocationService {
         textSocketHandler.sendMessage(
                 Event.builder()
                         .object(Location.class.getSimpleName())
-                        .type(EventType.CREATION)
+                        .type(ChangeType.CREATION)
                         .build().toString());
         var userId = userService.getCurrentUserId();
         return LocationDto.builder()
@@ -84,7 +83,7 @@ public class LocationService {
         textSocketHandler.sendMessage(
                 Event.builder()
                         .object(Location.class.getSimpleName())
-                        .type(EventType.UPDATE)
+                        .type(ChangeType.UPDATE)
                         .build().toString());
         return LocationDto.builder()
                 .id(res.getId())
@@ -108,7 +107,7 @@ public class LocationService {
         textSocketHandler.sendMessage(
                 Event.builder()
                         .object(Location.class.getSimpleName())
-                        .type(EventType.DELETION)
+                        .type(ChangeType.DELETION)
                         .build().toString());
     }
 }

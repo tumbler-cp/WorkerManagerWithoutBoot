@@ -31,7 +31,7 @@ public class OrganizationController {
         return organizationService.allOrganizations();
     }
 
-    @GetMapping
+    @GetMapping("/find")
     public OrganizationDto findOrganizationById(@RequestParam("id") Long id) {
         return organizationService.getOrganizationById(id);
     }
@@ -53,6 +53,7 @@ public class OrganizationController {
                         .fullName(newOrganization.getFullName())
                         .rating(newOrganization.getRating())
                         .owner(user)
+                        .editableByAdmin(newOrganization.getEditableByAdmin())
                         .build()
         );
     }

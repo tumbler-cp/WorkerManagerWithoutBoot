@@ -6,7 +6,7 @@ import lab.arahnik.exception.InsufficientEditingRightsException;
 import lab.arahnik.manager.dto.response.PersonDto;
 import lab.arahnik.manager.entity.Event;
 import lab.arahnik.manager.entity.Person;
-import lab.arahnik.manager.enums.EventType;
+import lab.arahnik.manager.enums.ChangeType;
 import lab.arahnik.manager.repository.LocationRepository;
 import lab.arahnik.manager.repository.PersonRepository;
 import lab.arahnik.websocket.handler.TextSocketHandler;
@@ -67,7 +67,7 @@ public class PersonService {
         textSocketHandler.sendMessage(
                 Event.builder()
                         .object(Person.class.getSimpleName())
-                        .type(EventType.CREATION)
+                        .type(ChangeType.CREATION)
                         .build().toString());
         return PersonDto.builder()
                 .id(res.getId())
@@ -100,7 +100,7 @@ public class PersonService {
         textSocketHandler.sendMessage(
                 Event.builder()
                         .object(Person.class.getSimpleName())
-                        .type(EventType.UPDATE)
+                        .type(ChangeType.UPDATE)
                         .build().toString());
         return PersonDto.builder()
                 .id(res.getId())
@@ -126,7 +126,7 @@ public class PersonService {
         textSocketHandler.sendMessage(
                 Event.builder()
                         .object(Person.class.getSimpleName())
-                        .type(EventType.DELETION)
+                        .type(ChangeType.DELETION)
                         .build().toString());
     }
 

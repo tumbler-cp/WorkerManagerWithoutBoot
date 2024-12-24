@@ -1,7 +1,6 @@
-package lab.arahnik.manager.entity;
+package lab.arahnik.administration.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lab.arahnik.authentication.entity.User;
 import lombok.AllArgsConstructor;
@@ -14,20 +13,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Location {
+public class AdminRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
     @NotNull
-    private Double x;
-    private Long y;
-    @NotNull
-    @NotBlank
-    private String name;
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id")
-    private User owner;
-    @NotNull
-    private Boolean editableByAdmin;
+    private AdminRequestStatus status;
 }

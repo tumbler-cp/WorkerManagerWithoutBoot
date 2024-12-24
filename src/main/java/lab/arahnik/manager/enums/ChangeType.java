@@ -1,6 +1,6 @@
 package lab.arahnik.manager.enums;
 
-public enum EventType {
+public enum ChangeType {
     CREATION,
     UPDATE,
     DELETION
