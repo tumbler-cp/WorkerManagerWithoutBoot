@@ -1,6 +1,6 @@
-package lab.arahnik.manager.dto.response;
+package lab.arahnik.manager.dto.request;
 
-import lab.arahnik.manager.entity.Coordinates;
+import lab.arahnik.manager.entity.Organization;
 import lab.arahnik.manager.enums.Position;
 import lab.arahnik.manager.enums.Status;
 import lombok.AllArgsConstructor;
@@ -8,22 +8,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class WorkerDto {
-    private Long id;
+@NoArgsConstructor
+public class NewWorker {
     private String name;
-    private Coordinates coordinates;
-    private LocalDate creationDate;
+    private Float x;
+    private Float y;
     private Long organizationId;
     private Double salary;
     private Long rating;
     private Position position;
     private Status status;
     private Long personId;
-    private Long ownerId;
 }

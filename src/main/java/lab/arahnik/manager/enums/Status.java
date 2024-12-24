@@ -2,5 +2,7 @@ package lab.arahnik.manager.enums;
 
 public enum Status {
     HIRED,
-    FIRED
+    FIRED,
+    RECOMMENDED_FOR_PROMOTION,
+    PROBATION
 }

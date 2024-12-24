@@ -1,78 +1,170 @@
 package lab.arahnik.manager.service;
 
-import lab.arahnik.authentication.entity.User;
-import lab.arahnik.authentication.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lab.arahnik.authentication.service.UserService;
+import lab.arahnik.exception.InsufficientEditingRightsException;
 import lab.arahnik.manager.dto.response.WorkerDto;
+import lab.arahnik.manager.entity.Event;
 import lab.arahnik.manager.entity.Worker;
+import lab.arahnik.manager.enums.EventType;
+import lab.arahnik.manager.repository.CoordinatesRepository;
+import lab.arahnik.manager.repository.OrganizationRepository;
+import lab.arahnik.manager.repository.PersonRepository;
 import lab.arahnik.manager.repository.WorkerRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
+import lab.arahnik.websocket.handler.TextSocketHandler;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
-@RequiredArgsConstructor
 public class WorkerService {
     private final WorkerRepository workerRepository;
-    private final UserRepository userRepository;
+    private final TextSocketHandler textSocketHandler;
+    private final UserService userService;
+    private final CoordinatesRepository coordinatesRepository;
+    private final OrganizationRepository organizationRepository;
+    private final PersonRepository personRepository;
 
-    public Worker findById(Long id) {
-        return workerRepository.findById(id).orElse(null);
+    public WorkerService(WorkerRepository workerRepository, TextSocketHandler textSocketHandler, UserService userService, CoordinatesRepository coordinatesRepository, OrganizationRepository organizationRepository, PersonRepository personRepository) {
+        this.workerRepository = workerRepository;
+        this.textSocketHandler = textSocketHandler;
+        this.userService = userService;
+        this.coordinatesRepository = coordinatesRepository;
+        this.organizationRepository = organizationRepository;
+        this.personRepository = personRepository;
     }
 
-    public List<WorkerDto> findAll() {
-        List<Worker> workers = workerRepository.findAll();
+    public List<WorkerDto> allWorkers() {
+        var workers = workerRepository.findAll();
         List<WorkerDto> res = new ArrayList<>();
-        for (Worker worker : workers) {
-            res.add(WorkerDto
-                    .builder()
-                    .id(worker.getId())
-                    .name(worker.getName())
-                    .status(worker.getStatus())
-                    .build());
+        for (var worker : workers) {
+            res.add(
+                    WorkerDto.builder()
+                            .id(worker.getId())
+                            .name(worker.getName())
+                            .coordinates(worker.getCoordinates())
+                            .creationDate(worker.getCreationDate())
+                            .organizationId(worker.getOrganization().getId())
+                            .salary(worker.getSalary())
+                            .rating(worker.getRating())
+                            .position(worker.getPosition())
+                            .status(worker.getStatus())
+                            .personId(worker.getPerson().getId())
+                            .ownerId(worker.getOwner().getId())
+                            .build()
+            );
         }
         return res;
     }
 
-    public List<WorkerDto> findAll(Pageable pageable) {
-        List<Worker> workers = workerRepository.findAll(pageable).getContent();
-        List<WorkerDto> res = new ArrayList<>();
-        for (Worker worker : workers) {
-            res.add(WorkerDto
-                    .builder()
-                    .id(worker.getId())
-                    .name(worker.getName())
-                    .status(worker.getStatus())
-                    .ownerId(worker.getOwner().getId())
-                    .build());
-        }
-        return res;
-    }
-
-    public WorkerDto save(Worker entity) {
-        var worker = workerRepository.save(entity);
+    public WorkerDto getWorkerById(Long id) {
+        var worker = workerRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Worker with id " + id + " not found"));
         return WorkerDto.builder()
                 .id(worker.getId())
                 .name(worker.getName())
+                .coordinates(worker.getCoordinates())
+                .creationDate(worker.getCreationDate())
+                .organizationId(worker.getOrganization().getId())
+                .salary(worker.getSalary())
+                .rating(worker.getRating())
+                .position(worker.getPosition())
                 .status(worker.getStatus())
+                .personId(worker.getPerson().getId())
                 .ownerId(worker.getOwner().getId())
                 .build();
     }
 
-    public Worker update(Worker entity) throws Exception {
-        String username = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (userRepository.findByUsername(username).isEmpty()) throw new Exception("Server error");
-        User user = userRepository.findByUsername(username).get();
-        if (!user.getId().equals(entity.getOwner().getId())) {
-            throw new Exception("No privileges");
-        }
-        return workerRepository.save(entity);
+    public WorkerDto createWorker(Worker newWorker) {
+        var worker = workerRepository.save(newWorker);
+        textSocketHandler.sendMessage(
+                Event.builder()
+                        .object(Worker.class.getSimpleName())
+                        .type(EventType.CREATION)
+                        .build().toString()
+        );
+        return WorkerDto.builder()
+                .id(worker.getId())
+                .name(worker.getName())
+                .coordinates(worker.getCoordinates())
+                .creationDate(worker.getCreationDate())
+                .organizationId(worker.getOrganization().getId())
+                .salary(worker.getSalary())
+                .rating(worker.getRating())
+                .position(worker.getPosition())
+                .status(worker.getStatus())
+                .personId(worker.getPerson().getId())
+                .ownerId(worker.getOwner().getId())
+                .build();
     }
 
-    public void delete(Long id) {
-        workerRepository.deleteById(id);
+    public WorkerDto updateWorker(WorkerDto workerDto) {
+        var worker = workerRepository.findById(workerDto.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Worker with id " + workerDto.getId() + " not found"));
+        var userId = userService.getCurrentUserId();
+        if (!Objects.equals(worker.getOwner().getId(), userId)) {
+            throw new InsufficientEditingRightsException("You are not owner of this worker");
+        }
+        worker.setName(workerDto.getName());
+        if (!workerDto.getCoordinates().getX().equals(worker.getCoordinates().getX()) ||
+        !workerDto.getCoordinates().getY().equals(worker.getCoordinates().getY())) {
+            worker.setCoordinates(
+                    coordinatesRepository.save(
+                            workerDto.getCoordinates()
+                    )
+            );
+        }
+        worker.setOrganization(
+                organizationRepository.findById(workerDto.getOrganizationId())
+                        .orElseThrow(() -> new EntityNotFoundException("Organization with id " + workerDto.getOrganizationId() + " not found"))
+        );
+        worker.setSalary(workerDto.getSalary());
+        worker.setRating(workerDto.getRating());
+        worker.setPosition(workerDto.getPosition());
+        worker.setStatus(workerDto.getStatus());
+        worker.setPerson(
+                personRepository.findById(workerDto.getPersonId())
+                        .orElseThrow(() -> new EntityNotFoundException("Person with id " + workerDto.getPersonId() + " not found"))
+        );
+        var res = workerRepository.save(worker);
+        textSocketHandler.sendMessage(
+                Event.builder()
+                        .object(Worker.class.getSimpleName())
+                        .type(EventType.UPDATE)
+                        .build().toString()
+        );
+        return WorkerDto.builder()
+                .id(res.getId())
+                .name(res.getName())
+                .coordinates(res.getCoordinates())
+                .creationDate(res.getCreationDate())
+                .organizationId(res.getOrganization().getId())
+                .salary(res.getSalary())
+                .rating(res.getRating())
+                .position(res.getPosition())
+                .status(res.getStatus())
+                .personId(res.getPerson().getId())
+                .ownerId(res.getOwner().getId())
+                .build();
     }
+
+    public void deleteWorker(Long id) {
+        var userId = userService.getCurrentUserId();
+        if (workerRepository.findById(id).isEmpty()) {
+            throw new EntityNotFoundException("Worker with id " + id + " not found");
+        }
+        if (!Objects.equals(userId, workerRepository.findById(id).get().getOwner().getId())) {
+            throw new InsufficientEditingRightsException("You are not owner of this worker");
+        }
+        workerRepository.deleteById(id);
+        textSocketHandler.sendMessage(
+                Event.builder()
+                        .object(Worker.class.getSimpleName())
+                        .type(EventType.DELETION)
+                        .build().toString()
+        );
+    }
+
 }
