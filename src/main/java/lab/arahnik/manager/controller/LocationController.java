@@ -8,6 +8,9 @@ import lab.arahnik.manager.dto.response.LocationDto;
 import lab.arahnik.manager.entity.Location;
 import lab.arahnik.manager.service.LocationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,6 +33,17 @@ public class LocationController {
     @GetMapping("/find")
     public LocationDto getLocationById(@RequestParam(name = "id") Long id) {
         return locationService.getLocationById(id);
+    }
+
+    @GetMapping("/paged")
+    public List<LocationDto> getLocationsByPage(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "pageSize",defaultValue = "5") int pageSize,
+            @RequestParam(name = "sort", defaultValue = "id,asc") String[] sort
+    ) {
+        Sort.Order order = new Sort.Order(Sort.Direction.fromString(sort[1]), sort[0]);
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(order));
+        return locationService.allLocationsPage(pageable);
     }
 
     @PostMapping("/new")

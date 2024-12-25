@@ -11,6 +11,7 @@ import lab.arahnik.manager.repository.LocationRepository;
 import lab.arahnik.manager.repository.PersonRepository;
 import lab.arahnik.websocket.handler.TextSocketHandler;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -27,6 +28,16 @@ public class PersonService {
 
     public List<PersonDto> allPersons() {
         var persons = personRepository.findAll();
+        return getPersonDtos(persons);
+
+    }
+
+    public List<PersonDto> allPersonsPage(Pageable pageable) {
+        var persons = personRepository.findAll(pageable).getContent();
+        return getPersonDtos(persons);
+    }
+
+    private List<PersonDto> getPersonDtos(List<Person> persons) {
         List<PersonDto> res = new ArrayList<>(persons.size());
         for (var person : persons) {
             res.add(
@@ -43,7 +54,6 @@ public class PersonService {
             );
         }
         return res;
-
     }
 
     public PersonDto getPersonById(Long id) {

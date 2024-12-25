@@ -18,7 +18,7 @@ public class AdminRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @OneToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", unique = true)
     private User user;
     @NotNull
     private AdminRequestStatus status;

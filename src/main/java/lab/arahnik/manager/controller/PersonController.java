@@ -9,6 +9,9 @@ import lab.arahnik.manager.entity.Person;
 import lab.arahnik.manager.repository.LocationRepository;
 import lab.arahnik.manager.service.PersonService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,6 +36,18 @@ public class PersonController {
     @GetMapping("/find")
     public PersonDto getPersonById(@RequestParam("id") Long id) {
         return personService.getPersonById(id);
+    }
+
+
+    @GetMapping("/paged")
+    public List<PersonDto> getPersonsByPage(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "pageSize",defaultValue = "5") int pageSize,
+            @RequestParam(name = "sort", defaultValue = "id,asc") String[] sort
+    ) {
+        Sort.Order order = new Sort.Order(Sort.Direction.fromString(sort[1]), sort[0]);
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(order));
+        return personService.allPersonsPage(pageable);
     }
 
     @PostMapping("/new")

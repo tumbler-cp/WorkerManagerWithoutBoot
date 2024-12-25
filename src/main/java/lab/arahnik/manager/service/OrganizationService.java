@@ -12,6 +12,7 @@ import lab.arahnik.manager.repository.AddressRepository;
 import lab.arahnik.manager.repository.OrganizationRepository;
 import lab.arahnik.websocket.handler.TextSocketHandler;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -28,6 +29,15 @@ public class OrganizationService {
 
     public List<OrganizationDto> allOrganizations() {
         var organizations = organizationRepository.findAll();
+        return getOrganizationDtos(organizations);
+    }
+
+    public List<OrganizationDto> getOrganizationsPage(Pageable pageable) {
+        var organizations = organizationRepository.findAll(pageable).getContent();
+        return getOrganizationDtos(organizations);
+    }
+
+    private List<OrganizationDto> getOrganizationDtos(List<Organization> organizations) {
         List<OrganizationDto> res = new ArrayList<>();
         for (var organization : organizations) {
             res.add(

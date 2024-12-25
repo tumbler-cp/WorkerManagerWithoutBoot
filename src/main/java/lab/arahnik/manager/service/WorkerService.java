@@ -13,6 +13,7 @@ import lab.arahnik.manager.repository.OrganizationRepository;
 import lab.arahnik.manager.repository.PersonRepository;
 import lab.arahnik.manager.repository.WorkerRepository;
 import lab.arahnik.websocket.handler.TextSocketHandler;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -41,6 +42,15 @@ public class WorkerService {
 
     public List<WorkerDto> allWorkers() {
         var workers = workerRepository.findAll();
+        return getWorkerDtos(workers);
+    }
+
+    public List<WorkerDto> allWorkersPage(Pageable pageable) {
+        var workers = workerRepository.findAll(pageable).getContent();
+        return getWorkerDtos(workers);
+    }
+
+    private List<WorkerDto> getWorkerDtos(List<Worker> workers) {
         List<WorkerDto> res = new ArrayList<>();
         for (var worker : workers) {
             res.add(
@@ -56,8 +66,8 @@ public class WorkerService {
                             .status(worker.getStatus())
                             .personId(worker.getPerson().getId())
                             .ownerId(worker.getOwner().getId())
-                            .build()
-            );
+                            .build());
+
         }
         return res;
     }

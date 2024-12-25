@@ -28,6 +28,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers("/auth/**").permitAll()
+                                .requestMatchers("/websocket/**").permitAll()
+                                .requestMatchers("/admin/reqlist").hasRole("ADMIN")
+                                .requestMatchers("/admin/update").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(

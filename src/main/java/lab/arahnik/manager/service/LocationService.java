@@ -10,6 +10,8 @@ import lab.arahnik.manager.enums.ChangeType;
 import lab.arahnik.manager.repository.LocationRepository;
 import lab.arahnik.websocket.handler.TextSocketHandler;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -25,6 +27,15 @@ public class LocationService {
 
     public List<LocationDto> allLocations() {
         var locations = locationRepository.findAll();
+        return getLocationDtos(locations);
+    }
+
+    public List<LocationDto> allLocationsPage(Pageable pageable) {
+        var locations = locationRepository.findAll(pageable).getContent();
+        return getLocationDtos(locations);
+    }
+
+    private List<LocationDto> getLocationDtos(List<Location> locations) {
         List<LocationDto> res = new ArrayList<>(locations.size());
         for (var location : locations) {
             res.add(

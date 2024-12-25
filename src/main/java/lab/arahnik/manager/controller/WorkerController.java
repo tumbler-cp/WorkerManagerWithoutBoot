@@ -12,6 +12,9 @@ import lab.arahnik.manager.repository.OrganizationRepository;
 import lab.arahnik.manager.repository.PersonRepository;
 import lab.arahnik.manager.service.WorkerService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -37,6 +40,17 @@ public class WorkerController {
     @GetMapping("/find")
     public WorkerDto findWorkerById(@RequestParam("id") Long id) {
         return workerService.getWorkerById(id);
+    }
+
+    @GetMapping("/paged")
+    public List<WorkerDto> getWorkersByPage(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "pageSize",defaultValue = "5") int pageSize,
+            @RequestParam(name = "sort", defaultValue = "id,asc") String[] sort
+    ) {
+        Sort.Order order = new Sort.Order(Sort.Direction.fromString(sort[1]), sort[0]);
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(order));
+        return workerService.allWorkersPage(pageable);
     }
 
     @PostMapping("/new")
