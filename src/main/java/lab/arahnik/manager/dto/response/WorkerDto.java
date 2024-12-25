@@ -26,4 +26,5 @@ public class WorkerDto {
     private Status status;
     private Long personId;
     private Long ownerId;
+    private Boolean isEditableByAdmin;
 }

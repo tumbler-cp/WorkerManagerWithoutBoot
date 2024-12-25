@@ -1,6 +1,9 @@
 package lab.arahnik.manager.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import lab.arahnik.authentication.entity.User;
+import lab.arahnik.authentication.enums.Role;
+import lab.arahnik.authentication.repository.UserRepository;
 import lab.arahnik.authentication.service.UserService;
 import lab.arahnik.exception.InsufficientEditingRightsException;
 import lab.arahnik.manager.dto.response.LocationDto;
@@ -10,7 +13,6 @@ import lab.arahnik.manager.enums.ChangeType;
 import lab.arahnik.manager.repository.LocationRepository;
 import lab.arahnik.websocket.handler.TextSocketHandler;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +26,7 @@ public class LocationService {
     private final LocationRepository locationRepository;
     private final UserService userService;
     private final TextSocketHandler textSocketHandler;
+    private final UserRepository userRepository;
 
     public List<LocationDto> allLocations() {
         var locations = locationRepository.findAll();
@@ -45,6 +48,7 @@ public class LocationService {
                             .y(location.getY())
                             .name(location.getName())
                             .ownerId(location.getOwner().getId())
+                            .isEditableByAdmin(location.getEditableByAdmin())
                             .build()
             );
         }
@@ -83,42 +87,65 @@ public class LocationService {
         var location = locationRepository.findById(locationDto.getId()).orElseThrow(
                 () -> new EntityNotFoundException("Location not found")
         );
-        var userId = userService.getCurrentUserId();
-        if (!Objects.equals(userId, location.getOwner().getId())) {
-            throw new InsufficientEditingRightsException("You do not have permission to update this location");
-        }
+
+        var user = getCurrentUserOrThrow();
+        validateEditingRights(user, location);
+
         location.setX(locationDto.getX());
         location.setY(locationDto.getY());
         location.setName(locationDto.getName());
-        var res = locationRepository.save(location);
-        textSocketHandler.sendMessage(
-                Event.builder()
-                        .object(Location.class.getSimpleName())
-                        .type(ChangeType.UPDATE)
-                        .build().toString());
-        return LocationDto.builder()
-                .id(res.getId())
-                .x(res.getX())
-                .y(res.getY())
-                .name(res.getName())
-                .ownerId(userId)
-                .build();
 
+        var updatedLocation = locationRepository.save(location);
+
+        sendEvent(ChangeType.UPDATE, Location.class.getSimpleName());
+
+        return mapToDto(updatedLocation, user.getId());
     }
 
     public void deleteLocation(Long id) {
-        var userId = userService.getCurrentUserId();
-        if (locationRepository.findById(id).isEmpty()) {
-            throw new EntityNotFoundException("Location not found");
-        }
-        if (!Objects.equals(userId, locationRepository.findById(id).get().getOwner().getId())) {
-            throw new InsufficientEditingRightsException("You do not have permission to delete this location");
-        }
+        var location = locationRepository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException("Location not found")
+        );
+
+        var user = getCurrentUserOrThrow();
+        validateEditingRights(user, location);
+
         locationRepository.deleteById(id);
+
+        sendEvent(ChangeType.DELETION, Location.class.getSimpleName());
+    }
+
+    private User getCurrentUserOrThrow() {
+        var userId = userService.getCurrentUserId();
+        return userRepository.findById(userId).orElseThrow(
+                () -> new EntityNotFoundException("User not found")
+        );
+    }
+
+    private void validateEditingRights(User user, Location location) {
+        if (!Objects.equals(user.getId(), location.getOwner().getId()) &&
+                !(user.getRole() == Role.ADMIN && location.getEditableByAdmin())) {
+            throw new InsufficientEditingRightsException("You do not have permission to modify this location");
+        }
+    }
+
+    private void sendEvent(ChangeType changeType, String objectType) {
         textSocketHandler.sendMessage(
                 Event.builder()
-                        .object(Location.class.getSimpleName())
-                        .type(ChangeType.DELETION)
-                        .build().toString());
+                        .object(objectType)
+                        .type(changeType)
+                        .build().toString()
+        );
     }
+
+    private LocationDto mapToDto(Location location, Long ownerId) {
+        return LocationDto.builder()
+                .id(location.getId())
+                .x(location.getX())
+                .y(location.getY())
+                .name(location.getName())
+                .ownerId(ownerId)
+                .build();
+    }
+
 }

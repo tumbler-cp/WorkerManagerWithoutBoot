@@ -2,6 +2,9 @@ package lab.arahnik.manager.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import lab.arahnik.administration.service.LogService;
+import lab.arahnik.authentication.entity.User;
+import lab.arahnik.authentication.enums.Role;
+import lab.arahnik.authentication.repository.UserRepository;
 import lab.arahnik.authentication.service.UserService;
 import lab.arahnik.exception.InsufficientEditingRightsException;
 import lab.arahnik.manager.dto.response.WorkerDto;
@@ -29,8 +32,9 @@ public class WorkerService {
     private final OrganizationRepository organizationRepository;
     private final PersonRepository personRepository;
     private final LogService logService;
+    private final UserRepository userRepository;
 
-    public WorkerService(WorkerRepository workerRepository, TextSocketHandler textSocketHandler, UserService userService, CoordinatesRepository coordinatesRepository, OrganizationRepository organizationRepository, PersonRepository personRepository, LogService logService) {
+    public WorkerService(WorkerRepository workerRepository, TextSocketHandler textSocketHandler, UserService userService, CoordinatesRepository coordinatesRepository, OrganizationRepository organizationRepository, PersonRepository personRepository, LogService logService, UserRepository userRepository) {
         this.workerRepository = workerRepository;
         this.textSocketHandler = textSocketHandler;
         this.userService = userService;
@@ -38,6 +42,7 @@ public class WorkerService {
         this.organizationRepository = organizationRepository;
         this.personRepository = personRepository;
         this.logService = logService;
+        this.userRepository = userRepository;
     }
 
     public List<WorkerDto> allWorkers() {
@@ -92,6 +97,9 @@ public class WorkerService {
 
     public WorkerDto createWorker(Worker newWorker) {
         var worker = workerRepository.save(newWorker);
+        var organization = worker.getOrganization();
+        organization.setEmployeesCount(organization.getEmployeesCount() + 1);
+        organizationRepository.save(organization);
         textSocketHandler.sendMessage(
                 Event.builder()
                         .object(Worker.class.getSimpleName())
@@ -111,29 +119,35 @@ public class WorkerService {
                 .status(worker.getStatus())
                 .personId(worker.getPerson().getId())
                 .ownerId(worker.getOwner().getId())
+                .isEditableByAdmin(worker.getEditableByAdmin())
                 .build();
     }
 
     public WorkerDto updateWorker(WorkerDto workerDto) {
         var worker = workerRepository.findById(workerDto.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Worker with id " + workerDto.getId() + " not found"));
-        var userId = userService.getCurrentUserId();
-        if (!Objects.equals(worker.getOwner().getId(), userId)) {
-            throw new InsufficientEditingRightsException("You are not owner of this worker");
-        }
+
+        var user = getCurrentUserOrThrow();
+        validateEditingRights(user, worker);
+
         worker.setName(workerDto.getName());
+
         if (!workerDto.getCoordinates().getX().equals(worker.getCoordinates().getX()) ||
-        !workerDto.getCoordinates().getY().equals(worker.getCoordinates().getY())) {
+                !workerDto.getCoordinates().getY().equals(worker.getCoordinates().getY())) {
             worker.setCoordinates(
-                    coordinatesRepository.save(
-                            workerDto.getCoordinates()
-                    )
+                    coordinatesRepository.save(workerDto.getCoordinates())
             );
         }
-        worker.setOrganization(
-                organizationRepository.findById(workerDto.getOrganizationId())
-                        .orElseThrow(() -> new EntityNotFoundException("Organization with id " + workerDto.getOrganizationId() + " not found"))
-        );
+
+        if (!workerDto.getOrganizationId().equals(worker.getOrganization().getId())) {
+            updateOrganizationEmployeeCount(worker.getOrganization().getId(), -1);
+            worker.setOrganization(
+                    organizationRepository.findById(workerDto.getOrganizationId())
+                            .orElseThrow(() -> new EntityNotFoundException("Organization with id " + workerDto.getOrganizationId() + " not found"))
+            );
+            updateOrganizationEmployeeCount(workerDto.getOrganizationId(), 1);
+        }
+
         worker.setSalary(workerDto.getSalary());
         worker.setRating(workerDto.getRating());
         worker.setPosition(workerDto.getPosition());
@@ -142,44 +156,73 @@ public class WorkerService {
                 personRepository.findById(workerDto.getPersonId())
                         .orElseThrow(() -> new EntityNotFoundException("Person with id " + workerDto.getPersonId() + " not found"))
         );
-        var res = workerRepository.save(worker);
-        textSocketHandler.sendMessage(
-                Event.builder()
-                        .object(Worker.class.getSimpleName())
-                        .type(ChangeType.UPDATE)
-                        .build().toString()
-        );
-        logService.addLog(ChangeType.UPDATE, worker);
-        return WorkerDto.builder()
-                .id(res.getId())
-                .name(res.getName())
-                .coordinates(res.getCoordinates())
-                .creationDate(res.getCreationDate())
-                .organizationId(res.getOrganization().getId())
-                .salary(res.getSalary())
-                .rating(res.getRating())
-                .position(res.getPosition())
-                .status(res.getStatus())
-                .personId(res.getPerson().getId())
-                .ownerId(res.getOwner().getId())
-                .build();
+
+        var updatedWorker = workerRepository.save(worker);
+
+        sendEvent(ChangeType.UPDATE, Worker.class.getSimpleName());
+        logService.addLog(ChangeType.UPDATE, updatedWorker);
+
+        return mapToWorkerDto(updatedWorker);
     }
 
     public void deleteWorker(Long id) {
-        var userId = userService.getCurrentUserId();
-        if (workerRepository.findById(id).isEmpty()) {
-            throw new EntityNotFoundException("Worker with id " + id + " not found");
-        }
-        if (!Objects.equals(userId, workerRepository.findById(id).get().getOwner().getId())) {
+        var worker = workerRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Worker with id " + id + " not found"));
+
+        var user = getCurrentUserOrThrow();
+        validateEditingRights(user, worker);
+
+        updateOrganizationEmployeeCount(worker.getOrganization().getId(), -1);
+        workerRepository.deleteById(id);
+
+        sendEvent(ChangeType.DELETION, Worker.class.getSimpleName());
+    }
+
+    private WorkerDto mapToWorkerDto(Worker worker) {
+        return WorkerDto.builder()
+                .id(worker.getId())
+                .name(worker.getName())
+                .coordinates(worker.getCoordinates())
+                .creationDate(worker.getCreationDate())
+                .organizationId(worker.getOrganization().getId())
+                .salary(worker.getSalary())
+                .rating(worker.getRating())
+                .position(worker.getPosition())
+                .status(worker.getStatus())
+                .personId(worker.getPerson().getId())
+                .ownerId(worker.getOwner().getId())
+                .build();
+    }
+
+    private void validateEditingRights(User user, Worker worker) {
+        if (!Objects.equals(user.getId(), worker.getOwner().getId()) &&
+                !(user.getRole() == Role.ADMIN && worker.getEditableByAdmin())) {
             throw new InsufficientEditingRightsException("You are not owner of this worker");
         }
-        workerRepository.deleteById(id);
+    }
+
+    private void sendEvent(ChangeType changeType, String objectType) {
         textSocketHandler.sendMessage(
                 Event.builder()
-                        .object(Worker.class.getSimpleName())
-                        .type(ChangeType.DELETION)
+                        .object(objectType)
+                        .type(changeType)
                         .build().toString()
         );
     }
+
+    private void updateOrganizationEmployeeCount(Long organizationId, int delta) {
+        var organization = organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new EntityNotFoundException("Organization with id " + organizationId + " not found"));
+        organization.setEmployeesCount(organization.getEmployeesCount() + delta);
+        organizationRepository.save(organization);
+    }
+
+    private User getCurrentUserOrThrow() {
+        var userId = userService.getCurrentUserId();
+        return userRepository.findById(userId).orElseThrow(
+                () -> new EntityNotFoundException("User not found")
+        );
+    }
+
 
 }

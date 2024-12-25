@@ -29,8 +29,8 @@ public class SecurityConfig {
                         authorizeRequests
                                 .requestMatchers("/auth/**").permitAll()
                                 .requestMatchers("/websocket/**").permitAll()
-                                .requestMatchers("/admin/reqlist").hasRole("ADMIN")
-                                .requestMatchers("/admin/update").hasRole("ADMIN")
+                                .requestMatchers("/admin/reqlist").hasAuthority("ADMIN")
+                                .requestMatchers("/admin/update").hasAuthority("ADMIN")
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(

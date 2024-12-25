@@ -15,4 +15,5 @@ public class LocationDto {
     private Long y;
     private String name;
     private Long ownerId;
+    private Boolean isEditableByAdmin;
 }

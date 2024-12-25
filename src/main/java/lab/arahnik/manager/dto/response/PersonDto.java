@@ -19,4 +19,5 @@ public class PersonDto {
     private Long weight;
     private String passportID;
     private Long ownerId;
+    private Boolean isEditableByAdmin;
 }

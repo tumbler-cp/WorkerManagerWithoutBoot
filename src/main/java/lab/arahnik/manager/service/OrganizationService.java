@@ -1,6 +1,9 @@
 package lab.arahnik.manager.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import lab.arahnik.authentication.entity.User;
+import lab.arahnik.authentication.enums.Role;
+import lab.arahnik.authentication.repository.UserRepository;
 import lab.arahnik.authentication.service.UserService;
 import lab.arahnik.exception.InsufficientEditingRightsException;
 import lab.arahnik.manager.dto.response.OrganizationDto;
@@ -26,6 +29,7 @@ public class OrganizationService {
     private final TextSocketHandler textSocketHandler;
     private final UserService userService;
     private final AddressRepository addressRepository;
+    private final UserRepository userRepository;
 
     public List<OrganizationDto> allOrganizations() {
         var organizations = organizationRepository.findAll();
@@ -45,10 +49,11 @@ public class OrganizationService {
                             .id(organization.getId())
                             .zipCode(organization.getAddress().getZipCode())
                             .annualTurnover(organization.getAnnualTurnover())
-                            .employeeCount(organization.getEmployeesCount())
+                            .employeesCount(organization.getEmployeesCount())
                             .fullName(organization.getFullName())
                             .rating(organization.getRating())
                             .ownerId(organization.getOwner().getId())
+                            .isEditableByAdmin(organization.getEditableByAdmin())
                             .build()
             );
         }
@@ -62,7 +67,7 @@ public class OrganizationService {
                 .id(organization.getId())
                 .zipCode(organization.getAddress().getZipCode())
                 .annualTurnover(organization.getAnnualTurnover())
-                .employeeCount(organization.getEmployeesCount())
+                .employeesCount(organization.getEmployeesCount())
                 .fullName(organization.getFullName())
                 .rating(organization.getRating())
                 .ownerId(organization.getOwner().getId())
@@ -80,7 +85,7 @@ public class OrganizationService {
                 .id(res.getId())
                 .zipCode(res.getAddress().getZipCode())
                 .annualTurnover(res.getAnnualTurnover())
-                .employeeCount(res.getEmployeesCount())
+                .employeesCount(0L)
                 .fullName(res.getFullName())
                 .rating(res.getRating())
                 .ownerId(res.getOwner().getId())
@@ -90,10 +95,10 @@ public class OrganizationService {
     public OrganizationDto updateOrganization(OrganizationDto organizationDto) {
         var organization = organizationRepository.findById(organizationDto.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Organization with id " + organizationDto.getId() + " not found"));
-        var userId = userService.getCurrentUserId();
-        if (!Objects.equals(userId, organization.getOwner().getId())) {
-            throw new InsufficientEditingRightsException("You do not have permission to update this organization");
-        }
+
+        var user = getCurrentUserOrThrow();
+        validateEditingRights(user, organization);
+
         if (!organizationDto.getZipCode().equals(organization.getAddress().getZipCode())) {
             organization.setAddress(
                     addressRepository.save(
@@ -101,42 +106,63 @@ public class OrganizationService {
                     )
             );
         }
+
         organization.setAnnualTurnover(organizationDto.getAnnualTurnover());
-        organization.setEmployeesCount(organizationDto.getEmployeeCount());
         organization.setFullName(organizationDto.getFullName());
         organization.setRating(organizationDto.getRating());
-        var res = organizationRepository.save(organization);
-        textSocketHandler.sendMessage(
-                Event.builder()
-                        .object(Organization.class.getSimpleName())
-                        .type(ChangeType.UPDATE)
-                        .build().toString()
-        );
-        return OrganizationDto.builder()
-                .id(res.getId())
-                .zipCode(res.getAddress().getZipCode())
-                .annualTurnover(res.getAnnualTurnover())
-                .employeeCount(res.getEmployeesCount())
-                .fullName(res.getFullName())
-                .rating(res.getRating())
-                .ownerId(res.getOwner().getId())
-                .build();
+
+        var updatedOrganization = organizationRepository.save(organization);
+
+        sendEvent(ChangeType.UPDATE, Organization.class.getSimpleName());
+
+        return mapToOrganizationDto(updatedOrganization);
     }
 
     public void deleteOrganization(Long id) {
-        var userId = userService.getCurrentUserId();
-        if (organizationRepository.findById(id).isEmpty()) {
-            throw new EntityNotFoundException("Organization with id " + id + " not found");
-        }
-        if (!Objects.equals(userId, organizationRepository.findById(id).get().getOwner().getId())) {
-            throw new InsufficientEditingRightsException("You do not have permission to delete this organization");
-        }
+        var organization = organizationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Organization with id " + id + " not found"));
+
+        var user = getCurrentUserOrThrow();
+        validateEditingRights(user, organization);
+
         organizationRepository.deleteById(id);
+
+        sendEvent(ChangeType.DELETION, Organization.class.getSimpleName());
+    }
+
+    private OrganizationDto mapToOrganizationDto(Organization organization) {
+        return OrganizationDto.builder()
+                .id(organization.getId())
+                .zipCode(organization.getAddress().getZipCode())
+                .annualTurnover(organization.getAnnualTurnover())
+                .employeesCount(organization.getEmployeesCount())
+                .fullName(organization.getFullName())
+                .rating(organization.getRating())
+                .ownerId(organization.getOwner().getId())
+                .build();
+    }
+
+    private void validateEditingRights(User user, Organization organization) {
+        if (!Objects.equals(user.getId(), organization.getOwner().getId()) &&
+                !(user.getRole() == Role.ADMIN && organization.getEditableByAdmin())) {
+            throw new InsufficientEditingRightsException("You do not have permission to modify this organization");
+        }
+    }
+
+    private void sendEvent(ChangeType changeType, String objectType) {
         textSocketHandler.sendMessage(
                 Event.builder()
-                        .object(Organization.class.getSimpleName())
-                        .type(ChangeType.DELETION)
+                        .object(objectType)
+                        .type(changeType)
                         .build().toString()
         );
     }
+
+    private User getCurrentUserOrThrow() {
+        var userId = userService.getCurrentUserId();
+        return userRepository.findById(userId).orElseThrow(
+                () -> new EntityNotFoundException("User not found")
+        );
+    }
+
 }

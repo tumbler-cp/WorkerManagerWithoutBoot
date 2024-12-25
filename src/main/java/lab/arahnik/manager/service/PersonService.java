@@ -1,6 +1,9 @@
 package lab.arahnik.manager.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import lab.arahnik.authentication.entity.User;
+import lab.arahnik.authentication.enums.Role;
+import lab.arahnik.authentication.repository.UserRepository;
 import lab.arahnik.authentication.service.UserService;
 import lab.arahnik.exception.InsufficientEditingRightsException;
 import lab.arahnik.manager.dto.response.PersonDto;
@@ -25,6 +28,7 @@ public class PersonService {
     private final UserService userService;
     private final LocationRepository locationRepository;
     private final TextSocketHandler textSocketHandler;
+    private final UserRepository userRepository;
 
     public List<PersonDto> allPersons() {
         var persons = personRepository.findAll();
@@ -50,6 +54,7 @@ public class PersonService {
                             .weight(person.getWeight())
                             .passportID(person.getPassportID())
                             .ownerId(person.getOwner().getId())
+                            .isEditableByAdmin(person.getEditableByAdmin())
                             .build()
             );
         }
@@ -94,50 +99,73 @@ public class PersonService {
     public PersonDto updatePerson(PersonDto personDto) {
         var person = personRepository.findById(personDto.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Person not found"));
-        var userId = userService.getCurrentUserId();
-        if (!Objects.equals(userId, person.getOwner().getId())) {
-            throw new InsufficientEditingRightsException("You do not have permission to update this person");
-        }
+
+        var user = getCurrentUserOrThrow();
+        validateEditingRights(user, person);
+
         person.setEyeColor(personDto.getEyeColor());
         person.setHairColor(personDto.getHairColor());
-        person.setLocation(locationRepository.findById(personDto.getId()).orElseThrow(
+        person.setLocation(locationRepository.findById(personDto.getLocationId()).orElseThrow(
                 () -> new EntityNotFoundException("Location not found")
         ));
         person.setHeight(personDto.getHeight());
         person.setWeight(personDto.getWeight());
         person.setPassportID(personDto.getPassportID());
-        var res = personRepository.save(person);
-        textSocketHandler.sendMessage(
-                Event.builder()
-                        .object(Person.class.getSimpleName())
-                        .type(ChangeType.UPDATE)
-                        .build().toString());
-        return PersonDto.builder()
-                .id(res.getId())
-                .eyeColor(res.getEyeColor())
-                .hairColor(res.getHairColor())
-                .locationId(res.getLocation().getId())
-                .height(res.getHeight())
-                .weight(res.getWeight())
-                .passportID(res.getPassportID())
-                .ownerId(res.getOwner().getId())
-                .build();
+
+        var updatedPerson = personRepository.save(person);
+
+        sendEvent(ChangeType.UPDATE, Person.class.getSimpleName());
+
+        return mapToPersonDto(updatedPerson);
     }
 
     public void deletePerson(Long id) {
-        var userId = userService.getCurrentUserId();
-        if (personRepository.findById(id).isEmpty()) {
-            throw new EntityNotFoundException("Person not found");
-        }
-        if (!Objects.equals(userId, personRepository.findById(id).get().getOwner().getId())) {
-            throw new InsufficientEditingRightsException("You do not have permission to delete this person");
-        }
+        var person = personRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Person not found"));
+
+        var user = getCurrentUserOrThrow();
+        validateEditingRights(user, person);
+
         personRepository.deleteById(id);
+
+        sendEvent(ChangeType.DELETION, Person.class.getSimpleName());
+    }
+
+    private PersonDto mapToPersonDto(Person person) {
+        return PersonDto.builder()
+                .id(person.getId())
+                .eyeColor(person.getEyeColor())
+                .hairColor(person.getHairColor())
+                .locationId(person.getLocation().getId())
+                .height(person.getHeight())
+                .weight(person.getWeight())
+                .passportID(person.getPassportID())
+                .ownerId(person.getOwner().getId())
+                .build();
+    }
+
+    private void validateEditingRights(User user, Person person) {
+        if (!Objects.equals(user.getId(), person.getOwner().getId()) &&
+                !(user.getRole() == Role.ADMIN && person.getEditableByAdmin())) {
+            throw new InsufficientEditingRightsException("You do not have permission to modify this person");
+        }
+    }
+
+    private void sendEvent(ChangeType changeType, String objectType) {
         textSocketHandler.sendMessage(
                 Event.builder()
-                        .object(Person.class.getSimpleName())
-                        .type(ChangeType.DELETION)
-                        .build().toString());
+                        .object(objectType)
+                        .type(changeType)
+                        .build().toString()
+        );
     }
+
+    private User getCurrentUserOrThrow() {
+        var userId = userService.getCurrentUserId();
+        return userRepository.findById(userId).orElseThrow(
+                () -> new EntityNotFoundException("User not found")
+        );
+    }
+
 
 }
