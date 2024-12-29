@@ -1,8 +1,5 @@
 package lab.arahnik.administration.dto;
 
-import jakarta.persistence.*;
-import lab.arahnik.authentication.entity.User;
-import lab.arahnik.manager.entity.Worker;
 import lab.arahnik.manager.enums.ChangeType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

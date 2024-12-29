@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: studs
       POSTGRES_USER: s368994
-      POSTGRES_PASSWORD: 511xXyUCKOAkcbJM
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5555:5432"
     volumes:

@@ -1,6 +1,8 @@
 package lab.arahnik.manager.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import lab.arahnik.authentication.entity.User;
 import lab.arahnik.authentication.enums.Role;
 import lab.arahnik.authentication.repository.UserRepository;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +30,7 @@ public class LocationService {
     private final UserService userService;
     private final TextSocketHandler textSocketHandler;
     private final UserRepository userRepository;
+    private final Validator validator;
 
     public List<LocationDto> allLocations() {
         var locations = locationRepository.findAll();
@@ -67,6 +71,7 @@ public class LocationService {
     }
 
     public LocationDto createLocation(Location location) {
+        validateLocation(location);
         var res = locationRepository.save(location);
         textSocketHandler.sendMessage(
                 Event.builder()
@@ -87,13 +92,14 @@ public class LocationService {
         var location = locationRepository.findById(locationDto.getId()).orElseThrow(
                 () -> new EntityNotFoundException("Location not found")
         );
-
         var user = getCurrentUserOrThrow();
         validateEditingRights(user, location);
 
         location.setX(locationDto.getX());
         location.setY(locationDto.getY());
         location.setName(locationDto.getName());
+
+        validateLocation(location);
 
         var updatedLocation = locationRepository.save(location);
 
@@ -146,6 +152,18 @@ public class LocationService {
                 .name(location.getName())
                 .ownerId(ownerId)
                 .build();
+    }
+
+    public void validateLocation(Location location) {
+        Set<ConstraintViolation<Location>> violations = validator.validate(location);
+
+        if (!violations.isEmpty()) {
+            StringBuilder message = new StringBuilder();
+            for (ConstraintViolation<Location> violation : violations) {
+                message.append(violation.getMessage()).append("\n");
+            }
+            throw new RuntimeException(message.toString());
+        }
     }
 
 }
