@@ -21,6 +21,5 @@ public class AdminRequest {
     @JoinColumn(name = "user_id", unique = true)
     private User user;
     @NotNull
-    @Enumerated(EnumType.STRING)
     private AdminRequestStatus status;
 }

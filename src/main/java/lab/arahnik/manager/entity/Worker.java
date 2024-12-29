@@ -35,7 +35,7 @@ public class Worker {
     @ManyToOne
     @JoinColumn(name = "organization_id")
     private Organization organization;
-    @DecimalMin(value = "0.0")
+    @DecimalMin(value = "0.1")
     private Double salary;
     @Min(1)
     private Long rating;
