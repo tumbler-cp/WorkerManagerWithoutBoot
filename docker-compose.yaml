@@ -3,7 +3,7 @@ services:
     image: postgres
     environment:
       POSTGRES_DB: studs
-      POSTGRES_USER: s368994
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
       - "5555:5432"

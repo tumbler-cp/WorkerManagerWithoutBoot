@@ -14,22 +14,29 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class AdminInitializer implements ApplicationListener<ContextRefreshedEvent> {
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
 
-    @Value("${app.admin.username}") private String adminUsername;
-    @Value("${app.admin.password}") private String adminPassword;
+  private final UserRepository userRepository;
+  private final PasswordEncoder passwordEncoder;
 
-    @Override
-    public void onApplicationEvent(@NonNull ContextRefreshedEvent event) {
-        if (userRepository.findByRole(Role.ADMIN).isPresent()) {
-            return;
-        }
-        User user = User.builder()
-                .username(adminUsername)
-                .password(passwordEncoder.encode(adminPassword))
-                .role(Role.ADMIN)
-                .build();
-        userRepository.save(user);
+  @Value("${app.admin.username}")
+  private String adminUsername;
+  @Value("${app.admin.password}")
+  private String adminPassword;
+
+  @Override
+  public void onApplicationEvent(@NonNull ContextRefreshedEvent event) {
+    if (userRepository
+            .findByRole(Role.ADMIN)
+            .isPresent()) {
+      return;
     }
+    User user = User
+            .builder()
+            .username(adminUsername)
+            .password(passwordEncoder.encode(adminPassword))
+            .role(Role.ADMIN)
+            .build();
+    userRepository.save(user);
+  }
+
 }

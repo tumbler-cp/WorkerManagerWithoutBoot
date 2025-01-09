@@ -10,10 +10,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LocationDto {
-    private Long id;
-    private Double x;
-    private Long y;
-    private String name;
-    private Long ownerId;
-    private Boolean isEditableByAdmin;
+
+  private Long id;
+  private Double x;
+  private Long y;
+  private String name;
+  private Long ownerId;
+  private Boolean isEditableByAdmin;
+
 }

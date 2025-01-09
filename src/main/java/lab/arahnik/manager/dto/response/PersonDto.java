@@ -11,13 +11,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PersonDto {
-    private Long id;
-    private Color eyeColor;
-    private Color hairColor;
-    private Long locationId;
-    private Double height;
-    private Long weight;
-    private String passportID;
-    private Long ownerId;
-    private Boolean isEditableByAdmin;
+
+  private Long id;
+  private Color eyeColor;
+  private Color hairColor;
+  private Long locationId;
+  private Double height;
+  private Long weight;
+  private String passportID;
+  private Long ownerId;
+  private Boolean isEditableByAdmin;
+
 }

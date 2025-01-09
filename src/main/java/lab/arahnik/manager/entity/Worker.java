@@ -21,43 +21,45 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Worker {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    @NotNull
-    @NotBlank
-    private String name;
-    @OneToOne
-    @JoinColumn(name = "coordinates_id")
-    private Coordinates coordinates;
-    @NotNull
-    private LocalDate creationDate;
-    @ManyToOne
-    @JoinColumn(name = "organization_id")
-    private Organization organization;
-    @DecimalMin(value = "0.1")
-    private Double salary;
-    @Min(1)
-    private Long rating;
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    private Position position;
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    private Status status;
-    @NotNull
-    @OneToOne
-    @JoinColumn(name = "person_id", unique = true)
-    private Person person;
-    @NotNull
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "owner_id")
-    private User owner;
-    @NotNull
-    private Boolean editableByAdmin;
 
-    @PrePersist
-    protected void onCreate() {
-        this.creationDate = LocalDate.now();
-    }
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+  @NotNull
+  @NotBlank
+  private String name;
+  @OneToOne
+  @JoinColumn(name = "coordinates_id")
+  private Coordinates coordinates;
+  @NotNull
+  private LocalDate creationDate;
+  @ManyToOne
+  @JoinColumn(name = "organization_id")
+  private Organization organization;
+  @DecimalMin(value = "0.1")
+  private Double salary;
+  @Min(1)
+  private Long rating;
+  @NotNull
+  @Enumerated(EnumType.STRING)
+  private Position position;
+  @NotNull
+  @Enumerated(EnumType.STRING)
+  private Status status;
+  @NotNull
+  @OneToOne
+  @JoinColumn(name = "person_id", unique = true)
+  private Person person;
+  @NotNull
+  @ManyToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "owner_id")
+  private User owner;
+  @NotNull
+  private Boolean editableByAdmin;
+
+  @PrePersist
+  protected void onCreate() {
+    this.creationDate = LocalDate.now();
+  }
+
 }

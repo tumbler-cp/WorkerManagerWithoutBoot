@@ -23,23 +23,25 @@ import java.util.List;
 @AllArgsConstructor
 @Table(name = "java_app_users")
 public class User implements UserDetails {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    @NotNull
-    @NotBlank
-    @Size(min = 3, max = 64)
-    @Column(unique = true)
-    private String username;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    private String password;
+  @NotNull
+  @NotBlank
+  @Size(min = 3, max = 64)
+  @Column(unique = true)
+  private String username;
 
-    @Enumerated(EnumType.STRING)
-    private Role role;
+  private String password;
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name()));
-    }
+  @Enumerated(EnumType.STRING)
+  private Role role;
+
+  @Override
+  public Collection<? extends GrantedAuthority> getAuthorities() {
+    return List.of(new SimpleGrantedAuthority(role.name()));
+  }
+
 }

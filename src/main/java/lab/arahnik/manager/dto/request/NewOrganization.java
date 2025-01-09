@@ -10,10 +10,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NewOrganization {
-    private String zipCode;
-    private Float annualTurnover;
-    private Long employeesCount;
-    private String fullName;
-    private Float rating;
-    private Boolean editableByAdmin;
+
+  private String zipCode;
+  private Float annualTurnover;
+  private Long employeesCount;
+  private String fullName;
+  private Float rating;
+  private Boolean editableByAdmin;
+
 }

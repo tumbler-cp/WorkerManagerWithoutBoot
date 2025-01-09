@@ -43,92 +43,98 @@ import java.util.Properties;
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${db.url}") private String dbUrl;
-    @Value("${db.user}") private String dbUser;
-    @Value("${db.password}") private String dbPassword;
-    @Value("${ddl-auto}") private String ddlAuto;
+  @Value("${db.url}")
+  private String dbUrl;
+  @Value("${db.user}")
+  private String dbUser;
+  @Value("${db.password}")
+  private String dbPassword;
+  @Value("${ddl-auto}")
+  private String ddlAuto;
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOriginPatterns("*")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(false);
-    }
+  @Override
+  public void addCorsMappings(CorsRegistry registry) {
+    registry
+            .addMapping("/**")
+            .allowedOriginPatterns("*")
+            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+            .allowedHeaders("*")
+            .allowCredentials(false);
+  }
 
-    @Bean
-    public DataSource dataSource() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("org.postgresql.Driver");
-        dataSource.setUrl(dbUrl);
-        dataSource.setUsername(dbUser);
-        dataSource.setPassword(dbPassword);
-        return dataSource;
-    }
+  @Bean
+  public DataSource dataSource() {
+    DriverManagerDataSource dataSource = new DriverManagerDataSource();
+    dataSource.setDriverClassName("org.postgresql.Driver");
+    dataSource.setUrl(dbUrl);
+    dataSource.setUsername(dbUser);
+    dataSource.setPassword(dbPassword);
+    return dataSource;
+  }
 
-    @Bean
-    public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
-        LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
-        em.setDataSource(dataSource());
-        em.setPackagesToScan("lab.arahnik.*");
-        em.setJpaVendorAdapter(new EclipseLinkJpaVendorAdapter());
+  @Bean
+  public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
+    LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+    em.setDataSource(dataSource());
+    em.setPackagesToScan("lab.arahnik.*");
+    em.setJpaVendorAdapter(new EclipseLinkJpaVendorAdapter());
 
-        Properties jpaProperties = new Properties();
-        jpaProperties.put("eclipselink.ddl-generation", ddlAuto);
-        em.setJpaProperties(jpaProperties);
+    Properties jpaProperties = new Properties();
+    jpaProperties.put("eclipselink.ddl-generation", ddlAuto);
+    em.setJpaProperties(jpaProperties);
 
-        return em;
-    }
+    return em;
+  }
 
-    @Bean
-    public JpaTransactionManager transactionManager() {
-        JpaTransactionManager transactionManager = new JpaTransactionManager();
-        transactionManager.setEntityManagerFactory(entityManagerFactory().getObject());
-        return transactionManager;
-    }
+  @Bean
+  public JpaTransactionManager transactionManager() {
+    JpaTransactionManager transactionManager = new JpaTransactionManager();
+    transactionManager.setEntityManagerFactory(entityManagerFactory().getObject());
+    return transactionManager;
+  }
 
-    @Bean
-    public ObjectMapper objectMapper() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        return objectMapper;
-    }
+  @Bean
+  public ObjectMapper objectMapper() {
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new JavaTimeModule());
+    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    return objectMapper;
+  }
 
-    @Bean
-    public MappingJackson2HttpMessageConverter jackson2HttpMessageConverter() {
-        return new MappingJackson2HttpMessageConverter(objectMapper());
-    }
+  @Bean
+  public MappingJackson2HttpMessageConverter jackson2HttpMessageConverter() {
+    return new MappingJackson2HttpMessageConverter(objectMapper());
+  }
 
-    @Bean
-    public UserDetailsService userDetailsService(UserRepository userRepository) {
-        return username ->
-                userRepository.findByUsername(username)
-                        .orElseThrow(() -> new UsernameNotFoundException("Username not found: " + username));
-    }
+  @Bean
+  public UserDetailsService userDetailsService(UserRepository userRepository) {
+    return username ->
+            userRepository
+                    .findByUsername(username)
+                    .orElseThrow(() -> new UsernameNotFoundException("Username not found: " + username));
+  }
 
-    @Bean
-    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService) {
-        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
-        daoAuthenticationProvider.setUserDetailsService(userDetailsService);
-        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
-        return daoAuthenticationProvider;
-    }
+  @Bean
+  public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService) {
+    DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+    daoAuthenticationProvider.setUserDetailsService(userDetailsService);
+    daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
+    return daoAuthenticationProvider;
+  }
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager();
-    }
+  @Bean
+  public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+    return configuration.getAuthenticationManager();
+  }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
 
-    @Override
-    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-        converters.add(jackson2HttpMessageConverter());
-    }
+  @Override
+  public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+    converters.add(jackson2HttpMessageConverter());
+  }
 
 }

@@ -1,6 +1,5 @@
 package lab.arahnik.manager.dto.request;
 
-import lab.arahnik.manager.entity.Organization;
 import lab.arahnik.manager.enums.Position;
 import lab.arahnik.manager.enums.Status;
 import lombok.AllArgsConstructor;
@@ -13,14 +12,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class NewWorker {
-    private String name;
-    private Float x;
-    private Float y;
-    private Long organizationId;
-    private Double salary;
-    private Long rating;
-    private Position position;
-    private Status status;
-    private Long personId;
-    private Boolean editableByAdmin;
+
+  private String name;
+  private Float x;
+  private Float y;
+  private Long organizationId;
+  private Double salary;
+  private Long rating;
+  private Position position;
+  private Status status;
+  private Long personId;
+  private Boolean editableByAdmin;
+
 }

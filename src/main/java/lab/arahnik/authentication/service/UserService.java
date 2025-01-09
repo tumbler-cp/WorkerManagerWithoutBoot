@@ -10,19 +10,22 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private final UserRepository userRepository;
 
-    public User getByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(username));
-    }
+  private final UserRepository userRepository;
 
-    public Long getCurrentUserId() {
-        return getByUsername(
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication()
-                        .getName())
-                .getId();
-    }
+  public User getByUsername(String username) {
+    return userRepository
+            .findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException(username));
+  }
+
+  public Long getCurrentUserId() {
+    return getByUsername(
+            SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getName())
+            .getId();
+  }
+
 }

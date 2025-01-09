@@ -15,16 +15,18 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WorkerDto {
-    private Long id;
-    private String name;
-    private Coordinates coordinates;
-    private LocalDate creationDate;
-    private Long organizationId;
-    private Double salary;
-    private Long rating;
-    private Position position;
-    private Status status;
-    private Long personId;
-    private Long ownerId;
-    private Boolean isEditableByAdmin;
+
+  private Long id;
+  private String name;
+  private Coordinates coordinates;
+  private LocalDate creationDate;
+  private Long organizationId;
+  private Double salary;
+  private Long rating;
+  private Position position;
+  private Status status;
+  private Long personId;
+  private Long ownerId;
+  private Boolean isEditableByAdmin;
+
 }

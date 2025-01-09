@@ -12,30 +12,32 @@ import java.util.Set;
 
 @Component
 public class TextSocketHandler extends TextWebSocketHandler {
-    private final Set<WebSocketSession> sessions = new HashSet<>();
 
-    @Override
-    public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
-        sessions.add(session);
-        System.out.println("Connected: " + session.getId());
-        super.afterConnectionEstablished(session);
-    }
+  private final Set<WebSocketSession> sessions = new HashSet<>();
 
-    @Override
-    public void afterConnectionClosed(
-            @NonNull WebSocketSession session,
-            @NonNull CloseStatus status) throws Exception {
-        sessions.remove(session);
-        super.afterConnectionClosed(session, status);
-    }
+  @Override
+  public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
+    sessions.add(session);
+    System.out.println("Connected: " + session.getId());
+    super.afterConnectionEstablished(session);
+  }
 
-    public void sendMessage(String message) {
-        for (WebSocketSession session : sessions) {
-            try {
-                session.sendMessage(new TextMessage(message));
-            } catch (Exception e) {
-                System.err.println(e.getMessage());
-            }
-        }
+  @Override
+  public void afterConnectionClosed(
+          @NonNull WebSocketSession session,
+          @NonNull CloseStatus status) throws Exception {
+    sessions.remove(session);
+    super.afterConnectionClosed(session, status);
+  }
+
+  public void sendMessage(String message) {
+    for (WebSocketSession session : sessions) {
+      try {
+        session.sendMessage(new TextMessage(message));
+      } catch (Exception e) {
+        System.err.println(e.getMessage());
+      }
     }
+  }
+
 }

@@ -1,7 +1,7 @@
 package lab.arahnik.administration.entity;
 
 public enum AdminRequestStatus {
-    ACCEPTED,
-    REJECTED,
-    PENDING
+  ACCEPTED,
+  REJECTED,
+  PENDING
 }

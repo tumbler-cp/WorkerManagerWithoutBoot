@@ -22,58 +22,64 @@ import java.util.List;
 @RequestMapping("/location")
 @RequiredArgsConstructor
 public class LocationController {
-    private final LocationService locationService;
-    private final UserService userService;
 
-    @GetMapping("/all")
-    public List<LocationDto> allLocations() {
-        return locationService.allLocations();
-    }
+  private final LocationService locationService;
+  private final UserService userService;
 
-    @GetMapping("/find")
-    public LocationDto getLocationById(@RequestParam(name = "id") Long id) {
-        return locationService.getLocationById(id);
-    }
+  @GetMapping("/all")
+  public List<LocationDto> allLocations() {
+    return locationService.allLocations();
+  }
 
-    @GetMapping("/paged")
-    public List<LocationDto> getLocationsByPage(
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "pageSize",defaultValue = "5") int pageSize,
-            @RequestParam(name = "sort", defaultValue = "id,asc") String[] sort
-    ) {
-        Sort.Order order = new Sort.Order(Sort.Direction.fromString(sort[1]), sort[0]);
-        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(order));
-        return locationService.allLocationsPage(pageable);
-    }
+  @GetMapping("/find")
+  public LocationDto getLocationById(@RequestParam(name = "id") Long id) {
+    return locationService.getLocationById(id);
+  }
 
-    @PostMapping("/new")
-    public LocationDto createLocation(@RequestBody NewLocation newLocation) {
-        var user = userService.getByUsername(
-                SecurityContextHolder.getContext().getAuthentication().getName()
-        );
-        return locationService.createLocation(
-                Location.builder()
-                        .x(newLocation.getX())
-                        .y(newLocation.getY())
-                        .name(newLocation.getName())
-                        .owner(user)
-                        .editableByAdmin(newLocation.getEditableByAdmin())
-                        .build()
-        );
-    }
+  @GetMapping("/paged")
+  public List<LocationDto> getLocationsByPage(
+          @RequestParam(name = "page", defaultValue = "0") int page,
+          @RequestParam(name = "pageSize", defaultValue = "5") int pageSize,
+          @RequestParam(name = "sort", defaultValue = "id,asc") String[] sort
+  ) {
+    Sort.Order order = new Sort.Order(Sort.Direction.fromString(sort[1]), sort[0]);
+    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(order));
+    return locationService.allLocationsPage(pageable);
+  }
 
-    @PutMapping("/update")
-    public LocationDto updateLocation(@RequestBody LocationDto location) {
-        return locationService.updateLocation(location);
-    }
+  @PostMapping("/new")
+  public LocationDto createLocation(@RequestBody NewLocation newLocation) {
+    var user = userService.getByUsername(
+            SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getName()
+    );
+    return locationService.createLocation(
+            Location
+                    .builder()
+                    .x(newLocation.getX())
+                    .y(newLocation.getY())
+                    .name(newLocation.getName())
+                    .owner(user)
+                    .editableByAdmin(newLocation.getEditableByAdmin())
+                    .build()
+    );
+  }
 
-    @DeleteMapping("/delete")
-    public void deleteLocation(@RequestParam(name = "id") Long id) {
-        locationService.deleteLocation(id);
-    }
+  @PutMapping("/update")
+  public LocationDto updateLocation(@RequestBody LocationDto location) {
+    return locationService.updateLocation(location);
+  }
 
-    @ExceptionHandler({InsufficientEditingRightsException.class, EntityNotFoundException.class})
-    public ResponseEntity<String> handleException(Exception exception) {
-        return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
-    }
+  @DeleteMapping("/delete")
+  public void deleteLocation(@RequestParam(name = "id") Long id) {
+    locationService.deleteLocation(id);
+  }
+
+  @ExceptionHandler({InsufficientEditingRightsException.class, EntityNotFoundException.class})
+  public ResponseEntity<String> handleException(Exception exception) {
+    return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
+  }
+
 }

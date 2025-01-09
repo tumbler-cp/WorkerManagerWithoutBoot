@@ -16,29 +16,34 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminController {
 
-    private final AdminService adminService;
-    private final LogService logService;
+  private final AdminService adminService;
+  private final LogService logService;
 
-    @PostMapping("/request")
-    public AdminRequestElem makeAdminRequest() {
-        AdminRequestDto adminRequestDto = AdminRequestDto.builder()
-                .username(SecurityContextHolder.getContext().getAuthentication().getName())
-                .build();
-        return adminService.addAdminRequest(adminRequestDto);
-    }
+  @PostMapping("/request")
+  public AdminRequestElem makeAdminRequest() {
+    AdminRequestDto adminRequestDto = AdminRequestDto
+            .builder()
+            .username(SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getName())
+            .build();
+    return adminService.addAdminRequest(adminRequestDto);
+  }
 
-    @GetMapping("/reqlist")
-    public List<AdminRequestElem> getRequests() {
-        return adminService.getAdminRequest();
-    }
+  @GetMapping("/reqlist")
+  public List<AdminRequestElem> getRequests() {
+    return adminService.getAdminRequest();
+  }
 
-    @GetMapping("/logs")
-    public List<LogDto> allLogs() {
-        return logService.allLogs();
-    }
+  @GetMapping("/logs")
+  public List<LogDto> allLogs() {
+    return logService.allLogs();
+  }
 
-    @PutMapping("/update")
-    public AdminRequestElem updateAdminRequest(@RequestBody AdminRequestElem adminRequestElem) {
-        return adminService.updateAdminRequest(adminRequestElem);
-    }
+  @PutMapping("/update")
+  public AdminRequestElem updateAdminRequest(@RequestBody AdminRequestElem adminRequestElem) {
+    return adminService.updateAdminRequest(adminRequestElem);
+  }
+
 }

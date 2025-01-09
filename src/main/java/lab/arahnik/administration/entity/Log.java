@@ -19,14 +19,16 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Log {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User user;
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Worker worker;
-    private LocalDateTime time;
-    @Enumerated(EnumType.STRING)
-    private ChangeType changeType;
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+  @ManyToOne(fetch = FetchType.LAZY)
+  private User user;
+  @ManyToOne(fetch = FetchType.LAZY)
+  private Worker worker;
+  private LocalDateTime time;
+  @Enumerated(EnumType.STRING)
+  private ChangeType changeType;
+
 }

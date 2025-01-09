@@ -11,7 +11,9 @@ import java.util.Optional;
 
 @Repository
 public interface AdminRequestRepository extends JpaRepository<AdminRequest, Long> {
-    List<AdminRequest> findAllByStatus(@NotNull AdminRequestStatus status);
 
-    Optional<AdminRequest> findByUserId(Long userId);
+  List<AdminRequest> findAllByStatus(@NotNull AdminRequestStatus status);
+
+  Optional<AdminRequest> findByUserId(Long userId);
+
 }

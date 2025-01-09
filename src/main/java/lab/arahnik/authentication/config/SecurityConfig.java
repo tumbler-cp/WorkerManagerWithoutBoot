@@ -18,27 +18,34 @@ import org.springframework.security.web.context.SecurityContextHolderFilter;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final JwtFilter jwtFilter;
-    private final CorsFilter corsFilter;
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(authorizeRequests ->
-                        authorizeRequests
-                                .requestMatchers("/auth/**").permitAll()
-                                .requestMatchers("/websocket/**").permitAll()
-                                .requestMatchers("/admin/reqlist").hasAuthority("ADMIN")
-                                .requestMatchers("/admin/update").hasAuthority("ADMIN")
-                                .anyRequest().authenticated()
-                )
-                .addFilterBefore(
+  private final JwtFilter jwtFilter;
+  private final CorsFilter corsFilter;
+
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(authorizeRequests ->
+                    authorizeRequests
+                            .requestMatchers("/auth/**")
+                            .permitAll()
+                            .requestMatchers("/websocket/**")
+                            .permitAll()
+                            .requestMatchers("/admin/reqlist")
+                            .hasAuthority("ADMIN")
+                            .requestMatchers("/admin/update")
+                            .hasAuthority("ADMIN")
+                            .anyRequest()
+                            .authenticated()
+            )
+            .addFilterBefore(
                     corsFilter, SecurityContextHolderFilter.class
-                )
-                .addFilterBefore(
+            )
+            .addFilterBefore(
                     jwtFilter, UsernamePasswordAuthenticationFilter.class
-                );
-        return http.build();
-    }
+            );
+    return http.build();
+  }
+
 }

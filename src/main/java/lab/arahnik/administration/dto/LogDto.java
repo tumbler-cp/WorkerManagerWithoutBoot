@@ -13,11 +13,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LogDto {
-    private Long id;
-    private String username;
-    private Long userId;
-    private String workerName;
-    private Long workerId;
-    private LocalDateTime time;
-    private ChangeType changeType;
+
+  private Long id;
+  private String username;
+  private Long userId;
+  private String workerName;
+  private Long workerId;
+  private LocalDateTime time;
+  private ChangeType changeType;
+
 }

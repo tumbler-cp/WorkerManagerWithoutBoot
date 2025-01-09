@@ -11,11 +11,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NewPerson {
-    private Color eyeColor;
-    private Color hairColor;
-    private Long locationId;
-    private Double height;
-    private Long weight;
-    private String passportID;
-    private Boolean editableByAdmin;
+
+  private Color eyeColor;
+  private Color hairColor;
+  private Long locationId;
+  private Double height;
+  private Long weight;
+  private String passportID;
+  private Boolean editableByAdmin;
+
 }

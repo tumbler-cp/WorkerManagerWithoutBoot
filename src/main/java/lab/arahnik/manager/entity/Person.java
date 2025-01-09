@@ -17,26 +17,28 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Person {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    @Enumerated(EnumType.STRING)
-    private Color eyeColor;
-    @Enumerated(EnumType.STRING)
-    private Color hairColor;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "location_id")
-    private Location location;
-    @DecimalMin(value = "0")
-    private Double height;
-    @Min(1)
-    private Long weight;
-    @NotNull
-    private String passportID;
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id")
-    private User owner;
-    @NotNull
-    private Boolean editableByAdmin;
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+  @Enumerated(EnumType.STRING)
+  private Color eyeColor;
+  @Enumerated(EnumType.STRING)
+  private Color hairColor;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "location_id")
+  private Location location;
+  @DecimalMin(value = "0")
+  private Double height;
+  @Min(1)
+  private Long weight;
+  @NotNull
+  private String passportID;
+  @NotNull
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "owner_id")
+  private User owner;
+  @NotNull
+  private Boolean editableByAdmin;
+
 }

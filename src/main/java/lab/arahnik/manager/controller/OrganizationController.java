@@ -25,65 +25,73 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrganizationController {
 
-    private final OrganizationService organizationService;
-    private final UserService userService;
-    private final AddressRepository addressRepository;
+  private final OrganizationService organizationService;
+  private final UserService userService;
+  private final AddressRepository addressRepository;
 
-    @GetMapping("/all")
-    public List<OrganizationDto> allOrganizations() {
-        return organizationService.allOrganizations();
-    }
+  @GetMapping("/all")
+  public List<OrganizationDto> allOrganizations() {
+    return organizationService.allOrganizations();
+  }
 
-    @GetMapping("/find")
-    public OrganizationDto findOrganizationById(@RequestParam("id") Long id) {
-        return organizationService.getOrganizationById(id);
-    }
+  @GetMapping("/find")
+  public OrganizationDto findOrganizationById(@RequestParam("id") Long id) {
+    return organizationService.getOrganizationById(id);
+  }
 
-    @GetMapping("/paged")
-    public List<OrganizationDto> getWorkersByPage(
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "pageSize",defaultValue = "5") int pageSize,
-            @RequestParam(name = "sort", defaultValue = "id,asc") String[] sort
-    ) {
-        Sort.Order order = new Sort.Order(Sort.Direction.fromString(sort[1]), sort[0]);
-        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(order));
-        return organizationService.getOrganizationsPage(pageable);
-    }
+  @GetMapping("/paged")
+  public List<OrganizationDto> getWorkersByPage(
+          @RequestParam(name = "page", defaultValue = "0") int page,
+          @RequestParam(name = "pageSize", defaultValue = "5") int pageSize,
+          @RequestParam(name = "sort", defaultValue = "id,asc") String[] sort
+  ) {
+    Sort.Order order = new Sort.Order(Sort.Direction.fromString(sort[1]), sort[0]);
+    Pageable pageable = PageRequest.of(page, pageSize, Sort.by(order));
+    return organizationService.getOrganizationsPage(pageable);
+  }
 
-    @PostMapping("/new")
-    public OrganizationDto createOrganization(@RequestBody NewOrganization newOrganization) {
-        var user = userService.getByUsername(
-                SecurityContextHolder.getContext().getAuthentication().getName()
-        );
-        return organizationService.createOrganization(
-                Organization.builder()
-                        .address(
-                                addressRepository.save(
-                                        Address.builder().zipCode(newOrganization.getZipCode()).build()
-                                )
-                        )
-                        .annualTurnover(newOrganization.getAnnualTurnover())
-                        .employeesCount(newOrganization.getEmployeesCount())
-                        .fullName(newOrganization.getFullName())
-                        .rating(newOrganization.getRating())
-                        .owner(user)
-                        .editableByAdmin(newOrganization.getEditableByAdmin())
-                        .build()
-        );
-    }
+  @PostMapping("/new")
+  public OrganizationDto createOrganization(@RequestBody NewOrganization newOrganization) {
+    var user = userService.getByUsername(
+            SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getName()
+    );
+    return organizationService.createOrganization(
+            Organization
+                    .builder()
+                    .address(
+                            addressRepository.save(
+                                    Address
+                                            .builder()
+                                            .zipCode(newOrganization.getZipCode())
+                                            .build()
+                            )
+                    )
+                    .annualTurnover(newOrganization.getAnnualTurnover())
+                    .employeesCount(newOrganization.getEmployeesCount())
+                    .fullName(newOrganization.getFullName())
+                    .rating(newOrganization.getRating())
+                    .owner(user)
+                    .editableByAdmin(newOrganization.getEditableByAdmin())
+                    .build()
+    );
+  }
 
-    @PutMapping("/update")
-    public OrganizationDto updateOrganization(@RequestBody OrganizationDto organizationDto) {
-        return organizationService.updateOrganization(organizationDto);
-    }
+  @PutMapping("/update")
+  public OrganizationDto updateOrganization(@RequestBody OrganizationDto organizationDto) {
+    return organizationService.updateOrganization(organizationDto);
+  }
 
-    @DeleteMapping("/delete")
-    public void deleteOrganization(@RequestParam("id") Long id) {
-        organizationService.deleteOrganization(id);
-    }
+  @DeleteMapping("/delete")
+  public void deleteOrganization(@RequestParam("id") Long id) {
+    organizationService.deleteOrganization(id);
+  }
 
-    @ExceptionHandler({InsufficientEditingRightsException.class, EntityNotFoundException.class})
-    public ResponseEntity<String> handleException(Exception exception) {
-        return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
-    }
+  @ExceptionHandler({InsufficientEditingRightsException.class, EntityNotFoundException.class})
+  public ResponseEntity<String> handleException(Exception exception) {
+    return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
+  }
+
 }

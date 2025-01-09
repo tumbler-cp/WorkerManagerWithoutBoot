@@ -9,12 +9,16 @@ import lombok.Data;
 @Data
 @Builder
 public class Event {
-    private String object;
-    private ChangeType type;
 
-    @Override
-    public String toString() {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        return gson.toJson(this);
-    }
+  private String object;
+  private ChangeType type;
+
+  @Override
+  public String toString() {
+    Gson gson = new GsonBuilder()
+            .setPrettyPrinting()
+            .create();
+    return gson.toJson(this);
+  }
+
 }

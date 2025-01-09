@@ -20,40 +20,53 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LogService {
 
-    private final LogRepository logRepository;
-    private final UserService userService;
+  private final LogRepository logRepository;
+  private final UserService userService;
 
-    public void addLog(ChangeType type, Worker worker) {
-        var user = userService.getByUsername(
-                SecurityContextHolder.getContext().getAuthentication().getName()
-        );
-        logRepository.save(
-                Log.builder()
-                        .user(user)
-                        .worker(worker)
-                        .time(LocalDateTime.now())
-                        .changeType(type)
-                        .build()
-        );
-    }
+  public void addLog(ChangeType type, Worker worker) {
+    var user = userService.getByUsername(
+            SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getName()
+    );
+    logRepository.save(
+            Log
+                    .builder()
+                    .user(user)
+                    .worker(worker)
+                    .time(LocalDateTime.now())
+                    .changeType(type)
+                    .build()
+    );
+  }
 
-    public List<LogDto> allLogs() {
-        var logs = logRepository.findAll();
-        List<LogDto> logDtos = new ArrayList<>();
-        for (var log : logs) {
-            logDtos.add(
-                    LogDto
-                            .builder()
-                            .id(log.getId())
-                            .username(log.getUser().getUsername())
-                            .userId(log.getUser().getId())
-                            .workerName(log.getWorker().getName())
-                            .workerId(log.getWorker().getId())
-                            .changeType(log.getChangeType())
-                            .time(log.getTime())
-                            .build()
-            );
-        }
-        return logDtos;
+  public List<LogDto> allLogs() {
+    var logs = logRepository.findAll();
+    List<LogDto> logDtos = new ArrayList<>();
+    for (var log : logs) {
+      logDtos.add(
+              LogDto
+                      .builder()
+                      .id(log.getId())
+                      .username(log
+                              .getUser()
+                              .getUsername())
+                      .userId(log
+                              .getUser()
+                              .getId())
+                      .workerName(log
+                              .getWorker()
+                              .getName())
+                      .workerId(log
+                              .getWorker()
+                              .getId())
+                      .changeType(log.getChangeType())
+                      .time(log.getTime())
+                      .build()
+      );
     }
+    return logDtos;
+  }
+
 }
