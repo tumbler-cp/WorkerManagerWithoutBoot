@@ -133,6 +133,11 @@ public class WebConfig implements WebMvcConfigurer {
   public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
     return configuration.getAuthenticationManager();
   }
+  
+	@Bean(name = "multipartResolver")
+  public StandardServletMultipartResolver standardServletMultipartResolver () {
+    return new StandardServletMultipartResolver();
+  }
 
   @Bean
   public PasswordEncoder passwordEncoder() {
