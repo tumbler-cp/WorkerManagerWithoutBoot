@@ -1,6 +1,8 @@
 package lab.arahnik.manager.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import lab.arahnik.authentication.entity.User;
 import lab.arahnik.authentication.enums.Role;
 import lab.arahnik.authentication.repository.UserRepository;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,7 @@ public class OrganizationService {
   private final UserService userService;
   private final AddressRepository addressRepository;
   private final UserRepository userRepository;
+  private final Validator validator;
 
   public List<OrganizationDto> allOrganizations() {
     var organizations = organizationRepository.findAll();
@@ -205,6 +209,20 @@ public class OrganizationService {
             .orElseThrow(
                     () -> new EntityNotFoundException("User not found")
             );
+  }
+
+  public void validateOrganization(Organization organization) {
+    Set<ConstraintViolation<Organization>> violations = validator.validate(organization);
+
+    if (!violations.isEmpty()) {
+      StringBuilder message = new StringBuilder();
+      for (ConstraintViolation<Organization> violation : violations) {
+        message
+                .append(violation.getMessage())
+                .append("\n");
+      }
+      throw new RuntimeException(message.toString());
+    }
   }
 
 }

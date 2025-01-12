@@ -102,6 +102,14 @@ public class LocationService {
             .build();
   }
 
+  public List<LocationDto> saveAllLocations(List<Location> locations) {
+    List<LocationDto> res = new ArrayList<>(locations.size());
+    for (var location : locations) {
+      res.add(createLocation(location));
+    }
+    return res;
+  }
+
   public LocationDto updateLocation(LocationDto locationDto) {
     var location = locationRepository
             .findById(locationDto.getId())
