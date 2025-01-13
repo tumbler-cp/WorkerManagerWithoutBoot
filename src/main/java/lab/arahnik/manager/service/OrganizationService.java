@@ -8,9 +8,11 @@ import lab.arahnik.authentication.enums.Role;
 import lab.arahnik.authentication.repository.UserRepository;
 import lab.arahnik.authentication.service.UserService;
 import lab.arahnik.exception.InsufficientEditingRightsException;
+import lab.arahnik.manager.dto.response.LocationDto;
 import lab.arahnik.manager.dto.response.OrganizationDto;
 import lab.arahnik.manager.entity.Address;
 import lab.arahnik.manager.entity.Event;
+import lab.arahnik.manager.entity.Location;
 import lab.arahnik.manager.entity.Organization;
 import lab.arahnik.manager.enums.ChangeType;
 import lab.arahnik.manager.repository.AddressRepository;
@@ -93,6 +95,7 @@ public class OrganizationService {
   }
 
   public OrganizationDto createOrganization(Organization organization) {
+    validateOrganization(organization);
     var res = organizationRepository.save(organization);
     textSocketHandler.sendMessage(
             Event
@@ -115,6 +118,14 @@ public class OrganizationService {
                     .getOwner()
                     .getId())
             .build();
+  }
+
+  public List<OrganizationDto> saveAllOrganizations(List<Organization> organizations) {
+    List<OrganizationDto> res = new ArrayList<>(organizations.size());
+    for (var organization : organizations) {
+      res.add(createOrganization(organization));
+    }
+    return res;
   }
 
   public OrganizationDto updateOrganization(OrganizationDto organizationDto) {
@@ -144,6 +155,8 @@ public class OrganizationService {
     organization.setAnnualTurnover(organizationDto.getAnnualTurnover());
     organization.setFullName(organizationDto.getFullName());
     organization.setRating(organizationDto.getRating());
+
+    validateOrganization(organization);
 
     var updatedOrganization = organizationRepository.save(organization);
 

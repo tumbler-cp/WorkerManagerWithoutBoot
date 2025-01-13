@@ -1,6 +1,8 @@
 package lab.arahnik.manager.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import lab.arahnik.administration.service.LogService;
 import lab.arahnik.authentication.entity.User;
 import lab.arahnik.authentication.enums.Role;
@@ -8,22 +10,24 @@ import lab.arahnik.authentication.repository.UserRepository;
 import lab.arahnik.authentication.service.UserService;
 import lab.arahnik.exception.InsufficientEditingRightsException;
 import lab.arahnik.manager.dto.response.WorkerDto;
-import lab.arahnik.manager.entity.Event;
-import lab.arahnik.manager.entity.Worker;
+import lab.arahnik.manager.entity.*;
 import lab.arahnik.manager.enums.ChangeType;
 import lab.arahnik.manager.repository.CoordinatesRepository;
 import lab.arahnik.manager.repository.OrganizationRepository;
 import lab.arahnik.manager.repository.PersonRepository;
 import lab.arahnik.manager.repository.WorkerRepository;
 import lab.arahnik.websocket.handler.TextSocketHandler;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
+@RequiredArgsConstructor
 public class WorkerService {
 
   private final WorkerRepository workerRepository;
@@ -34,19 +38,7 @@ public class WorkerService {
   private final PersonRepository personRepository;
   private final LogService logService;
   private final UserRepository userRepository;
-
-  public WorkerService(WorkerRepository workerRepository, TextSocketHandler textSocketHandler, UserService userService,
-                       CoordinatesRepository coordinatesRepository, OrganizationRepository organizationRepository,
-                       PersonRepository personRepository, LogService logService, UserRepository userRepository) {
-    this.workerRepository = workerRepository;
-    this.textSocketHandler = textSocketHandler;
-    this.userService = userService;
-    this.coordinatesRepository = coordinatesRepository;
-    this.organizationRepository = organizationRepository;
-    this.personRepository = personRepository;
-    this.logService = logService;
-    this.userRepository = userRepository;
-  }
+  private final Validator validator;
 
   public List<WorkerDto> allWorkers() {
     var workers = workerRepository.findAll();
@@ -116,6 +108,7 @@ public class WorkerService {
   }
 
   public WorkerDto createWorker(Worker newWorker) {
+    validateWorker(newWorker);
     var worker = workerRepository.save(newWorker);
     var organization = worker.getOrganization();
     organization.setEmployeesCount(organization.getEmployeesCount() + 1);
@@ -150,6 +143,14 @@ public class WorkerService {
                     .getId())
             .isEditableByAdmin(worker.getEditableByAdmin())
             .build();
+  }
+
+  public List<WorkerDto> saveAllWorkers(List<Worker> workers) {
+    List<WorkerDto> res = new ArrayList<>(workers.size());
+    for (var worker : workers) {
+      res.add(createWorker(worker));
+    }
+    return res;
   }
 
   public WorkerDto updateWorker(WorkerDto workerDto) {
@@ -207,6 +208,7 @@ public class WorkerService {
                             "Person with id " + workerDto.getPersonId() + " not found"))
     );
 
+    validateWorker(worker);
     var updatedWorker = workerRepository.save(worker);
 
     sendEvent(ChangeType.UPDATE, Worker.class.getSimpleName());
@@ -289,6 +291,20 @@ public class WorkerService {
             .orElseThrow(
                     () -> new EntityNotFoundException("User not found")
             );
+  }
+
+  public void validateWorker(Worker worker) {
+    Set<ConstraintViolation<Worker>> violations = validator.validate(worker);
+
+    if (!violations.isEmpty()) {
+      StringBuilder message = new StringBuilder();
+      for (ConstraintViolation<Worker> violation : violations) {
+        message
+                .append(violation.getMessage())
+                .append("\n");
+      }
+      throw new RuntimeException(message.toString());
+    }
   }
 
 }
