@@ -6,6 +6,7 @@ import lab.arahnik.exception.InsufficientEditingRightsException;
 import lab.arahnik.manager.dto.request.NewPerson;
 import lab.arahnik.manager.dto.response.PersonDto;
 import lab.arahnik.manager.entity.Person;
+import lab.arahnik.manager.importer.service.PersonImportService;
 import lab.arahnik.manager.repository.LocationRepository;
 import lab.arahnik.manager.service.PersonService;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -27,6 +31,7 @@ public class PersonController {
   private final PersonService personService;
   private final UserService userService;
   private final LocationRepository locationRepository;
+  private final PersonImportService personImportService;
 
   @GetMapping("/all")
   public List<PersonDto> allPersons() {
@@ -75,6 +80,13 @@ public class PersonController {
                     .editableByAdmin(newPerson.getEditableByAdmin())
                     .build()
     );
+  }
+
+  @PostMapping("/upload")
+  public List<PersonDto> uploadLocation(@RequestParam("file") MultipartFile file) throws IOException {
+    String tempFilePath = System.getProperty("java.io.tmpdir") + "/" + file.getOriginalFilename();
+    file.transferTo(new File(tempFilePath));
+    return personImportService.importPersons(tempFilePath);
   }
 
   @PutMapping("/update")

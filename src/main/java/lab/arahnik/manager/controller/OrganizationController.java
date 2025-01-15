@@ -7,6 +7,7 @@ import lab.arahnik.manager.dto.request.NewOrganization;
 import lab.arahnik.manager.dto.response.OrganizationDto;
 import lab.arahnik.manager.entity.Address;
 import lab.arahnik.manager.entity.Organization;
+import lab.arahnik.manager.importer.service.OrganizationImportService;
 import lab.arahnik.manager.repository.AddressRepository;
 import lab.arahnik.manager.service.OrganizationService;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -28,6 +32,7 @@ public class OrganizationController {
   private final OrganizationService organizationService;
   private final UserService userService;
   private final AddressRepository addressRepository;
+  private final OrganizationImportService organizationImportService;
 
   @GetMapping("/all")
   public List<OrganizationDto> allOrganizations() {
@@ -77,6 +82,13 @@ public class OrganizationController {
                     .editableByAdmin(newOrganization.getEditableByAdmin())
                     .build()
     );
+  }
+
+  @PostMapping("/upload")
+  public List<OrganizationDto> uploadLocation(@RequestParam("file") MultipartFile file) throws IOException {
+    String tempFilePath = System.getProperty("java.io.tmpdir") + "/" + file.getOriginalFilename();
+    file.transferTo(new File(tempFilePath));
+    return organizationImportService.importOrganizations(tempFilePath);
   }
 
   @PutMapping("/update")
