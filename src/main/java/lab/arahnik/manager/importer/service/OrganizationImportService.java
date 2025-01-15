@@ -6,6 +6,7 @@ import lab.arahnik.authentication.service.UserService;
 import lab.arahnik.manager.dto.response.OrganizationDto;
 import lab.arahnik.manager.entity.Address;
 import lab.arahnik.manager.entity.Organization;
+import lab.arahnik.manager.repository.AddressRepository;
 import lab.arahnik.manager.service.OrganizationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,6 +23,7 @@ public class OrganizationImportService {
 
   private final UserService userService;
   private final OrganizationService organizationService;
+  private final AddressRepository addressRepository;
 
   public List<OrganizationDto> importOrganizations(String filePath) {
     var user = userService.getByUsername(
@@ -33,9 +35,9 @@ public class OrganizationImportService {
       while ((nextLine = reader.readNext()) != null) {
         Organization organization = Organization
                 .builder()
-                .address(Address.builder().zipCode(nextLine[0]).build())
+                .address(addressRepository.save(Address.builder().zipCode(nextLine[0]).build()))
                 .annualTurnover(Float.parseFloat(nextLine[1]))
-                .employeesCount(0L)
+                .employeesCount(1L)
                 .fullName(nextLine[2])
                 .rating(Float.parseFloat(nextLine[3]))
                 .owner(user)
