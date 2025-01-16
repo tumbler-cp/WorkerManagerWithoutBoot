@@ -7,6 +7,7 @@ import lab.arahnik.manager.dto.request.NewOrganization;
 import lab.arahnik.manager.dto.response.OrganizationDto;
 import lab.arahnik.manager.entity.Address;
 import lab.arahnik.manager.entity.Organization;
+import lab.arahnik.manager.importer.service.FileLogService;
 import lab.arahnik.manager.importer.service.OrganizationImportService;
 import lab.arahnik.manager.repository.AddressRepository;
 import lab.arahnik.manager.service.OrganizationService;
@@ -33,6 +34,7 @@ public class OrganizationController {
   private final UserService userService;
   private final AddressRepository addressRepository;
   private final OrganizationImportService organizationImportService;
+  private final FileLogService fileLogService;
 
   @GetMapping("/all")
   public List<OrganizationDto> allOrganizations() {
@@ -88,7 +90,9 @@ public class OrganizationController {
   public List<OrganizationDto> uploadLocation(@RequestParam("file") MultipartFile file) throws IOException {
     String tempFilePath = System.getProperty("java.io.tmpdir") + "/" + file.getOriginalFilename();
     file.transferTo(new File(tempFilePath));
-    return organizationImportService.importOrganizations(tempFilePath);
+    var res = organizationImportService.importOrganizations(tempFilePath);
+    fileLogService.save(file.getOriginalFilename(), res.size(), Organization.class.getSimpleName());
+    return res;
   }
 
   @PutMapping("/update")

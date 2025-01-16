@@ -6,6 +6,7 @@ import lab.arahnik.exception.InsufficientEditingRightsException;
 import lab.arahnik.manager.dto.request.NewLocation;
 import lab.arahnik.manager.dto.response.LocationDto;
 import lab.arahnik.manager.entity.Location;
+import lab.arahnik.manager.importer.service.FileLogService;
 import lab.arahnik.manager.importer.service.LocationImportService;
 import lab.arahnik.manager.service.LocationService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class LocationController {
   private final LocationService locationService;
   private final LocationImportService locationImportService;
   private final UserService userService;
+  private final FileLogService fileLogService;
 
   @GetMapping("/all")
   public List<LocationDto> allLocations() {
@@ -76,7 +78,9 @@ public class LocationController {
   public List<LocationDto> uploadLocation(@RequestParam("file") MultipartFile file) throws IOException {
     String tempFilePath = System.getProperty("java.io.tmpdir") + "/" + file.getOriginalFilename();
     file.transferTo(new File(tempFilePath));
-    return locationImportService.importLocations(tempFilePath);
+    var res = locationImportService.importLocations(tempFilePath);
+    fileLogService.save(file.getOriginalFilename(), res.size(), Location.class.getSimpleName());
+    return res;
   }
 
   @PutMapping("/update")

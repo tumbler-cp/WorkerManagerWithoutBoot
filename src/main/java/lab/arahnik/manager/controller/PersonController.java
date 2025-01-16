@@ -6,6 +6,7 @@ import lab.arahnik.exception.InsufficientEditingRightsException;
 import lab.arahnik.manager.dto.request.NewPerson;
 import lab.arahnik.manager.dto.response.PersonDto;
 import lab.arahnik.manager.entity.Person;
+import lab.arahnik.manager.importer.service.FileLogService;
 import lab.arahnik.manager.importer.service.PersonImportService;
 import lab.arahnik.manager.repository.LocationRepository;
 import lab.arahnik.manager.service.PersonService;
@@ -32,6 +33,7 @@ public class PersonController {
   private final UserService userService;
   private final LocationRepository locationRepository;
   private final PersonImportService personImportService;
+  private final FileLogService fileLogService;
 
   @GetMapping("/all")
   public List<PersonDto> allPersons() {
@@ -86,7 +88,9 @@ public class PersonController {
   public List<PersonDto> uploadLocation(@RequestParam("file") MultipartFile file) throws IOException {
     String tempFilePath = System.getProperty("java.io.tmpdir") + "/" + file.getOriginalFilename();
     file.transferTo(new File(tempFilePath));
-    return personImportService.importPersons(tempFilePath);
+    var res = personImportService.importPersons(tempFilePath);
+    fileLogService.save(file.getOriginalFilename(), res.size(), Person.class.getSimpleName());
+    return res;
   }
 
   @PutMapping("/update")

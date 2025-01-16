@@ -27,7 +27,9 @@ public class OrganizationImportService {
 
   public List<OrganizationDto> importOrganizations(String filePath) {
     var user = userService.getByUsername(
-            SecurityContextHolder.getContext().getAuthentication().getName()
+            SecurityContextHolder.getContext()
+                    .getAuthentication()
+                    .getName()
     );
     List<Organization> result = new ArrayList<>();
     try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
@@ -35,7 +37,9 @@ public class OrganizationImportService {
       while ((nextLine = reader.readNext()) != null) {
         Organization organization = Organization
                 .builder()
-                .address(addressRepository.save(Address.builder().zipCode(nextLine[0]).build()))
+                .address(addressRepository.save(Address.builder()
+                        .zipCode(nextLine[0])
+                        .build()))
                 .annualTurnover(Float.parseFloat(nextLine[1]))
                 .employeesCount(1L)
                 .fullName(nextLine[2])
@@ -51,4 +55,5 @@ public class OrganizationImportService {
     }
     return organizationService.saveAllOrganizations(result);
   }
+
 }

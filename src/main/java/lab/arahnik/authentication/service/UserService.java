@@ -1,5 +1,6 @@
 package lab.arahnik.authentication.service;
 
+import lab.arahnik.authentication.dto.UserDto;
 import lab.arahnik.authentication.entity.User;
 import lab.arahnik.authentication.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,19 @@ public class UserService {
                     .getAuthentication()
                     .getName())
             .getId();
+  }
+
+  public UserDto getCurrentUserDto() {
+    var user = getByUsername(
+            SecurityContextHolder
+                    .getContext()
+                    .getAuthentication()
+                    .getName());
+    return UserDto.builder()
+            .id(user.getId())
+            .username(user.getUsername())
+            .role(user.getRole())
+            .build();
   }
 
 }

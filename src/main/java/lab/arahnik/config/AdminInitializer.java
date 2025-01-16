@@ -25,9 +25,9 @@ public class AdminInitializer implements ApplicationListener<ContextRefreshedEve
 
   @Override
   public void onApplicationEvent(@NonNull ContextRefreshedEvent event) {
-    if (userRepository
-            .findByRole(Role.ADMIN)
-            .isPresent()) {
+    if (!userRepository
+            .findAllByRole(Role.ADMIN)
+            .isEmpty()) {
       return;
     }
     User user = User

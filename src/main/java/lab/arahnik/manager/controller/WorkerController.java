@@ -7,6 +7,7 @@ import lab.arahnik.manager.dto.request.NewWorker;
 import lab.arahnik.manager.dto.response.WorkerDto;
 import lab.arahnik.manager.entity.Coordinates;
 import lab.arahnik.manager.entity.Worker;
+import lab.arahnik.manager.importer.service.FileLogService;
 import lab.arahnik.manager.importer.service.WorkerImportService;
 import lab.arahnik.manager.repository.CoordinatesRepository;
 import lab.arahnik.manager.repository.OrganizationRepository;
@@ -37,6 +38,7 @@ public class WorkerController {
   private final PersonRepository personRepository;
   private final OrganizationRepository organizationRepository;
   private final WorkerImportService workerImportService;
+  private final FileLogService fileLogService;
 
   @GetMapping("/all")
   public List<WorkerDto> allWorkers() {
@@ -104,7 +106,9 @@ public class WorkerController {
   public List<WorkerDto> uploadLocation(@RequestParam("file") MultipartFile file) throws IOException {
     String tempFilePath = System.getProperty("java.io.tmpdir") + "/" + file.getOriginalFilename();
     file.transferTo(new File(tempFilePath));
-    return workerImportService.importWorkers(tempFilePath);
+    var res = workerImportService.importWorkers(tempFilePath);
+    fileLogService.save(file.getOriginalFilename(), res.size(), Worker.class.getSimpleName());
+    return res;
   }
 
   @PutMapping("/update")
