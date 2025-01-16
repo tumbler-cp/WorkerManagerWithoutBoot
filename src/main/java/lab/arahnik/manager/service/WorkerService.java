@@ -1,8 +1,6 @@
 package lab.arahnik.manager.service;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validator;
 import lab.arahnik.administration.service.LogService;
 import lab.arahnik.authentication.entity.User;
 import lab.arahnik.authentication.enums.Role;
@@ -20,11 +18,11 @@ import lab.arahnik.websocket.handler.TextSocketHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -38,21 +36,20 @@ public class WorkerService {
   private final PersonRepository personRepository;
   private final LogService logService;
   private final UserRepository userRepository;
-  private final Validator validator;
 
-  public List<WorkerDto> allWorkers() {
+  public List<WorkerDto> all() {
     var workers = workerRepository.findAll();
-    return getWorkerDtos(workers);
+    return toDto(workers);
   }
 
-  public List<WorkerDto> allWorkersPage(Pageable pageable) {
+  public List<WorkerDto> page(Pageable pageable) {
     var workers = workerRepository
             .findAll(pageable)
             .getContent();
-    return getWorkerDtos(workers);
+    return toDto(workers);
   }
 
-  private List<WorkerDto> getWorkerDtos(List<Worker> workers) {
+  private List<WorkerDto> toDto(List<Worker> workers) {
     List<WorkerDto> res = new ArrayList<>();
     for (var worker : workers) {
       res.add(
@@ -81,7 +78,7 @@ public class WorkerService {
     return res;
   }
 
-  public WorkerDto getWorkerById(Long id) {
+  public WorkerDto getById(Long id) {
     var worker = workerRepository
             .findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Worker with id " + id + " not found"));
@@ -107,8 +104,10 @@ public class WorkerService {
             .build();
   }
 
-  public WorkerDto createWorker(Worker newWorker) {
+  @Transactional
+  public WorkerDto create(Worker newWorker) {
     validateWorker(newWorker);
+    coordinatesRepository.save(newWorker.getCoordinates());
     var worker = workerRepository.save(newWorker);
     var organization = worker.getOrganization();
     organization.setEmployeesCount(organization.getEmployeesCount() + 1);
@@ -145,15 +144,17 @@ public class WorkerService {
             .build();
   }
 
-  public List<WorkerDto> saveAllWorkers(List<Worker> workers) {
+  @Transactional
+  public List<WorkerDto> saveAll(List<Worker> workers) {
     List<WorkerDto> res = new ArrayList<>(workers.size());
     for (var worker : workers) {
-      res.add(createWorker(worker));
+      res.add(create(worker));
     }
     return res;
   }
 
-  public WorkerDto updateWorker(WorkerDto workerDto) {
+  @Transactional
+  public WorkerDto update(WorkerDto workerDto) {
     var worker = workerRepository
             .findById(workerDto.getId())
             .orElseThrow(() -> new EntityNotFoundException("Worker with id " + workerDto.getId() + " not found"));
@@ -217,7 +218,7 @@ public class WorkerService {
     return mapToWorkerDto(updatedWorker);
   }
 
-  public void deleteWorker(Long id) {
+  public void delete(Long id) {
     var worker = workerRepository
             .findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Worker with id " + id + " not found"));
@@ -294,16 +295,20 @@ public class WorkerService {
   }
 
   public void validateWorker(Worker worker) {
-    Set<ConstraintViolation<Worker>> violations = validator.validate(worker);
-
-    if (!violations.isEmpty()) {
-      StringBuilder message = new StringBuilder();
-      for (ConstraintViolation<Worker> violation : violations) {
-        message
-                .append(violation.getMessage())
-                .append("\n");
-      }
-      throw new RuntimeException(message.toString());
+    if (worker.getName() == null
+            || worker.getName()
+            .isEmpty()
+            || worker.getCoordinates() == null
+            || worker.getSalary() < 0.1
+            || worker.getRating() < 1
+            || worker.getPosition() == null
+            || worker.getStatus() == null
+            || worker.getPerson() == null
+            || worker.getOwner() == null
+            || worker.getOrganization() == null
+            || worker.getEditableByAdmin() == null
+    ) {
+      throw new RuntimeException("Worker with id " + worker.getId() + " have validation issues");
     }
   }
 

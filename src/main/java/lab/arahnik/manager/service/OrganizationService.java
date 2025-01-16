@@ -8,11 +8,9 @@ import lab.arahnik.authentication.enums.Role;
 import lab.arahnik.authentication.repository.UserRepository;
 import lab.arahnik.authentication.service.UserService;
 import lab.arahnik.exception.InsufficientEditingRightsException;
-import lab.arahnik.manager.dto.response.LocationDto;
 import lab.arahnik.manager.dto.response.OrganizationDto;
 import lab.arahnik.manager.entity.Address;
 import lab.arahnik.manager.entity.Event;
-import lab.arahnik.manager.entity.Location;
 import lab.arahnik.manager.entity.Organization;
 import lab.arahnik.manager.enums.ChangeType;
 import lab.arahnik.manager.repository.AddressRepository;
@@ -21,6 +19,7 @@ import lab.arahnik.websocket.handler.TextSocketHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,19 +37,19 @@ public class OrganizationService {
   private final UserRepository userRepository;
   private final Validator validator;
 
-  public List<OrganizationDto> allOrganizations() {
+  public List<OrganizationDto> all() {
     var organizations = organizationRepository.findAll();
-    return getOrganizationDtos(organizations);
+    return toDto(organizations);
   }
 
-  public List<OrganizationDto> getOrganizationsPage(Pageable pageable) {
+  public List<OrganizationDto> page(Pageable pageable) {
     var organizations = organizationRepository
             .findAll(pageable)
             .getContent();
-    return getOrganizationDtos(organizations);
+    return toDto(organizations);
   }
 
-  private List<OrganizationDto> getOrganizationDtos(List<Organization> organizations) {
+  private List<OrganizationDto> toDto(List<Organization> organizations) {
     List<OrganizationDto> res = new ArrayList<>();
     for (var organization : organizations) {
       res.add(
@@ -74,7 +73,7 @@ public class OrganizationService {
     return res;
   }
 
-  public OrganizationDto getOrganizationById(Long id) {
+  public OrganizationDto getById(Long id) {
     var organization = organizationRepository
             .findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Organization with id " + id + " not found"));
@@ -94,7 +93,8 @@ public class OrganizationService {
             .build();
   }
 
-  public OrganizationDto createOrganization(Organization organization) {
+  @Transactional
+  public OrganizationDto create(Organization organization) {
     validateOrganization(organization);
     var res = organizationRepository.save(organization);
     textSocketHandler.sendMessage(
@@ -120,15 +120,17 @@ public class OrganizationService {
             .build();
   }
 
-  public List<OrganizationDto> saveAllOrganizations(List<Organization> organizations) {
+  @Transactional
+  public List<OrganizationDto> saveAll(List<Organization> organizations) {
     List<OrganizationDto> res = new ArrayList<>(organizations.size());
     for (var organization : organizations) {
-      res.add(createOrganization(organization));
+      res.add(create(organization));
     }
     return res;
   }
 
-  public OrganizationDto updateOrganization(OrganizationDto organizationDto) {
+  @Transactional
+  public OrganizationDto update(OrganizationDto organizationDto) {
     var organization = organizationRepository
             .findById(organizationDto.getId())
             .orElseThrow(() -> new EntityNotFoundException(
@@ -165,7 +167,7 @@ public class OrganizationService {
     return mapToOrganizationDto(updatedOrganization);
   }
 
-  public void deleteOrganization(Long id) {
+  public void delete(Long id) {
     var organization = organizationRepository
             .findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Organization with id " + id + " not found"));

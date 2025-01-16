@@ -9,6 +9,7 @@ import lab.arahnik.manager.service.LocationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -22,7 +23,8 @@ public class LocationImportService {
   private final UserService userService;
   private final LocationService locationService;
 
-  public List<LocationDto> importLocations(String filePath) {
+  @Transactional
+  public List<LocationDto> importFrom(String filePath) {
     var user = userService.getByUsername(
             SecurityContextHolder
                     .getContext()
@@ -47,7 +49,7 @@ public class LocationImportService {
     } catch (IOException | CsvValidationException e) {
       System.out.println(e.getMessage());
     }
-    return locationService.saveAllLocations(result);
+    return locationService.saveAll(result);
   }
 
 }

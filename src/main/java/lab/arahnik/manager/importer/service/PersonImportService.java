@@ -12,6 +12,7 @@ import lab.arahnik.manager.service.PersonService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -26,20 +27,31 @@ public class PersonImportService {
   private final LocationRepository locationRepository;
   private final PersonService personService;
 
-  public List<PersonDto> importPersons(String filePath) {
+  @Transactional
+  public List<PersonDto> importFrom(String filePath) {
     var user = userService.getByUsername(
-            SecurityContextHolder.getContext().getAuthentication().getName()
+            SecurityContextHolder.getContext()
+                    .getAuthentication()
+                    .getName()
     );
     List<Person> result = new ArrayList<>();
     try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
       String[] nextLine;
       while ((nextLine = reader.readNext()) != null) {
+        String eyeColorStr = nextLine[0].trim()
+                .toUpperCase();
+        String hairColorStr = nextLine[1].trim()
+                .toUpperCase();
+        System.out.println(
+                "Processing eyeColor: " + eyeColorStr + ", hairColor: " + hairColorStr); // Add this line for debugging
+
         Person person = Person.builder()
-                .eyeColor(Color.valueOf(nextLine[0]))
-                .hairColor(Color.valueOf(nextLine[1]))
-                .location(locationRepository.findById(Long.parseLong(nextLine[2])).orElseThrow(
-                        () -> new EntityNotFoundException("Location not found")
-                ))
+                .eyeColor(Color.valueOf(eyeColorStr))
+                .hairColor(Color.valueOf(hairColorStr))
+                .location(locationRepository.findById(Long.parseLong(nextLine[2]))
+                        .orElseThrow(
+                                () -> new EntityNotFoundException("Location not found")
+                        ))
                 .height(Double.parseDouble(nextLine[3]))
                 .weight(Long.parseLong(nextLine[4]))
                 .passportID(nextLine[5])
@@ -52,6 +64,7 @@ public class PersonImportService {
     } catch (CsvValidationException | IOException e) {
       System.out.println(e.getMessage());
     }
-    return personService.saveAllPersons(result);
+    return personService.saveAll(result);
   }
+
 }

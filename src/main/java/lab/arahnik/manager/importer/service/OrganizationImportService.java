@@ -11,6 +11,7 @@ import lab.arahnik.manager.service.OrganizationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -25,7 +26,8 @@ public class OrganizationImportService {
   private final OrganizationService organizationService;
   private final AddressRepository addressRepository;
 
-  public List<OrganizationDto> importOrganizations(String filePath) {
+  @Transactional
+  public List<OrganizationDto> importFrom(String filePath) {
     var user = userService.getByUsername(
             SecurityContextHolder.getContext()
                     .getAuthentication()
@@ -53,7 +55,7 @@ public class OrganizationImportService {
     } catch (IOException | CsvValidationException e) {
       System.out.println(e.getMessage());
     }
-    return organizationService.saveAllOrganizations(result);
+    return organizationService.saveAll(result);
   }
 
 }

@@ -17,6 +17,7 @@ import lab.arahnik.websocket.handler.TextSocketHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,19 +34,19 @@ public class LocationService {
   private final UserRepository userRepository;
   private final Validator validator;
 
-  public List<LocationDto> allLocations() {
+  public List<LocationDto> all() {
     var locations = locationRepository.findAll();
-    return getLocationDtos(locations);
+    return toDto(locations);
   }
 
-  public List<LocationDto> allLocationsPage(Pageable pageable) {
+  public List<LocationDto> page(Pageable pageable) {
     var locations = locationRepository
             .findAll(pageable)
             .getContent();
-    return getLocationDtos(locations);
+    return toDto(locations);
   }
 
-  private List<LocationDto> getLocationDtos(List<Location> locations) {
+  private List<LocationDto> toDto(List<Location> locations) {
     List<LocationDto> res = new ArrayList<>(locations.size());
     for (var location : locations) {
       res.add(
@@ -65,7 +66,7 @@ public class LocationService {
     return res;
   }
 
-  public LocationDto getLocationById(Long id) {
+  public LocationDto getById(Long id) {
     var location = locationRepository
             .findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Location not found"));
@@ -81,7 +82,7 @@ public class LocationService {
             .build();
   }
 
-  public LocationDto createLocation(Location location) {
+  public LocationDto create(Location location) {
     validateLocation(location);
     var res = locationRepository.save(location);
     textSocketHandler.sendMessage(
@@ -102,15 +103,16 @@ public class LocationService {
             .build();
   }
 
-  public List<LocationDto> saveAllLocations(List<Location> locations) {
+  @Transactional
+  public List<LocationDto> saveAll(List<Location> locations) {
     List<LocationDto> res = new ArrayList<>(locations.size());
     for (var location : locations) {
-      res.add(createLocation(location));
+      res.add(create(location));
     }
     return res;
   }
 
-  public LocationDto updateLocation(LocationDto locationDto) {
+  public LocationDto update(LocationDto locationDto) {
     var location = locationRepository
             .findById(locationDto.getId())
             .orElseThrow(
@@ -132,7 +134,7 @@ public class LocationService {
     return mapToDto(updatedLocation, user.getId());
   }
 
-  public void deleteLocation(Long id) {
+  public void delete(Long id) {
     var location = locationRepository
             .findById(id)
             .orElseThrow(

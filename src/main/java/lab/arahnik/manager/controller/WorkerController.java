@@ -9,11 +9,14 @@ import lab.arahnik.manager.entity.Coordinates;
 import lab.arahnik.manager.entity.Worker;
 import lab.arahnik.manager.importer.service.FileLogService;
 import lab.arahnik.manager.importer.service.WorkerImportService;
-import lab.arahnik.manager.repository.CoordinatesRepository;
 import lab.arahnik.manager.repository.OrganizationRepository;
 import lab.arahnik.manager.repository.PersonRepository;
 import lab.arahnik.manager.service.WorkerService;
+import lab.arahnik.minio.MinioService;
+import lab.arahnik.util.service.UtilComponent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -23,18 +26,21 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 @RestController
 @RequestMapping("/worker")
+@PropertySource("classpath:application.properties")
 @RequiredArgsConstructor
 public class WorkerController {
 
+  private final MinioService minioService;
+  private final UtilComponent utilComponent;
+  @Value("${minio.bucket-name}")
+  private String bucket;
+
   private final WorkerService workerService;
   private final UserService userService;
-  private final CoordinatesRepository coordinatesRepository;
   private final PersonRepository personRepository;
   private final OrganizationRepository organizationRepository;
   private final WorkerImportService workerImportService;
@@ -42,12 +48,12 @@ public class WorkerController {
 
   @GetMapping("/all")
   public List<WorkerDto> allWorkers() {
-    return workerService.allWorkers();
+    return workerService.all();
   }
 
   @GetMapping("/find")
   public WorkerDto findWorkerById(@RequestParam("id") Long id) {
-    return workerService.getWorkerById(id);
+    return workerService.getById(id);
   }
 
   @GetMapping("/paged")
@@ -58,7 +64,7 @@ public class WorkerController {
   ) {
     Sort.Order order = new Sort.Order(Sort.Direction.fromString(sort[1]), sort[0]);
     Pageable pageable = PageRequest.of(page, pageSize, Sort.by(order));
-    return workerService.allWorkersPage(pageable);
+    return workerService.page(pageable);
   }
 
   @PostMapping("/new")
@@ -75,18 +81,16 @@ public class WorkerController {
     var organization = organizationRepository
             .findById(newWorker.getOrganizationId())
             .orElseThrow(() -> new EntityNotFoundException("Organization not found"));
-    return workerService.createWorker(
+    return workerService.create(
             Worker
                     .builder()
                     .name(newWorker.getName())
                     .coordinates(
-                            coordinatesRepository.save(
-                                    Coordinates
-                                            .builder()
-                                            .x(newWorker.getX())
-                                            .y(newWorker.getY())
-                                            .build()
-                            )
+                            Coordinates
+                                    .builder()
+                                    .x(newWorker.getX())
+                                    .y(newWorker.getY())
+                                    .build()
                     )
                     .organization(
                             organization
@@ -103,22 +107,38 @@ public class WorkerController {
   }
 
   @PostMapping("/upload")
-  public List<WorkerDto> uploadLocation(@RequestParam("file") MultipartFile file) throws IOException {
-    String tempFilePath = System.getProperty("java.io.tmpdir") + "/" + file.getOriginalFilename();
-    file.transferTo(new File(tempFilePath));
-    var res = workerImportService.importWorkers(tempFilePath);
-    fileLogService.save(file.getOriginalFilename(), res.size(), Worker.class.getSimpleName());
-    return res;
+  public List<WorkerDto> upload(@RequestParam("file") MultipartFile file) throws Exception {
+    String tempFilePath = utilComponent.getTmpFilePath(file);
+    utilComponent.transfer(file, tempFilePath);
+    String fileName = null;
+    try {
+      var res = workerImportService.importFrom(tempFilePath);
+      fileName = minioService.saveFile(bucket,
+              SecurityContextHolder.getContext()
+                      .getAuthentication()
+                      .getName(),
+              file);
+      fileLogService.save(fileName, res.size(), Worker.class.getSimpleName());
+      return res;
+    } catch (Exception e) {
+      System.out.println(e.getMessage());
+
+      if (fileName != null) {
+        minioService.rollbackSaveFile(fileName, bucket);
+      }
+
+      throw e;
+    }
   }
 
   @PutMapping("/update")
   public WorkerDto updateWorker(@RequestBody WorkerDto workerDto) {
-    return workerService.updateWorker(workerDto);
+    return workerService.update(workerDto);
   }
 
   @DeleteMapping("/delete")
   public void deleteWorker(@RequestParam("id") Long id) {
-    workerService.deleteWorker(id);
+    workerService.delete(id);
   }
 
   @ExceptionHandler({InsufficientEditingRightsException.class, EntityNotFoundException.class})

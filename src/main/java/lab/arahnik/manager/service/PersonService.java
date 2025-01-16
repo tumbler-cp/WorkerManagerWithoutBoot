@@ -8,10 +8,8 @@ import lab.arahnik.authentication.enums.Role;
 import lab.arahnik.authentication.repository.UserRepository;
 import lab.arahnik.authentication.service.UserService;
 import lab.arahnik.exception.InsufficientEditingRightsException;
-import lab.arahnik.manager.dto.response.OrganizationDto;
 import lab.arahnik.manager.dto.response.PersonDto;
 import lab.arahnik.manager.entity.Event;
-import lab.arahnik.manager.entity.Organization;
 import lab.arahnik.manager.entity.Person;
 import lab.arahnik.manager.enums.ChangeType;
 import lab.arahnik.manager.repository.LocationRepository;
@@ -20,6 +18,7 @@ import lab.arahnik.websocket.handler.TextSocketHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,20 +36,20 @@ public class PersonService {
   private final UserRepository userRepository;
   private final Validator validator;
 
-  public List<PersonDto> allPersons() {
+  public List<PersonDto> all() {
     var persons = personRepository.findAll();
-    return getPersonDtos(persons);
+    return toDto(persons);
 
   }
 
-  public List<PersonDto> allPersonsPage(Pageable pageable) {
+  public List<PersonDto> page(Pageable pageable) {
     var persons = personRepository
             .findAll(pageable)
             .getContent();
-    return getPersonDtos(persons);
+    return toDto(persons);
   }
 
-  private List<PersonDto> getPersonDtos(List<Person> persons) {
+  private List<PersonDto> toDto(List<Person> persons) {
     List<PersonDto> res = new ArrayList<>(persons.size());
     for (var person : persons) {
       res.add(
@@ -75,7 +74,7 @@ public class PersonService {
     return res;
   }
 
-  public PersonDto getPersonById(Long id) {
+  public PersonDto getById(Long id) {
     var person = personRepository
             .findById(id)
             .orElseThrow(
@@ -98,7 +97,7 @@ public class PersonService {
             .build();
   }
 
-  public PersonDto createPerson(Person person) {
+  public PersonDto create(Person person) {
     validatePerson(person);
     var res = personRepository.save(person);
     textSocketHandler.sendMessage(
@@ -125,15 +124,16 @@ public class PersonService {
             .build();
   }
 
-  public List<PersonDto> saveAllPersons(List<Person> persons) {
+  @Transactional
+  public List<PersonDto> saveAll(List<Person> persons) {
     List<PersonDto> res = new ArrayList<>(persons.size());
     for (var person : persons) {
-      res.add(createPerson(person));
+      res.add(create(person));
     }
     return res;
   }
 
-  public PersonDto updatePerson(PersonDto personDto) {
+  public PersonDto update(PersonDto personDto) {
     var person = personRepository
             .findById(personDto.getId())
             .orElseThrow(() -> new EntityNotFoundException("Person not found"));
@@ -161,7 +161,7 @@ public class PersonService {
     return mapToPersonDto(updatedPerson);
   }
 
-  public void deletePerson(Long id) {
+  public void delete(Long id) {
     var person = personRepository
             .findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Person not found"));
